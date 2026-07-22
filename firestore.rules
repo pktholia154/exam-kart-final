@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function isValidCategory(data) {
+      return data.keys().hasAll(['name', 'seoslug']) && data.keys().size() == 2 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.seoslug is string && data.seoslug.size() <= 100;
+    }
+    
+    function isValidBook(data) {
+      return data.keys().hasAll([
+        'title', 'seoslug', 'category', 'publsher', 'pdfurl', 'sampleurl', 
+        'listprice', 'buyprice', 'seoDescription', 'fullDescription', 
+        'tags', 'averageRating', 'reviewCount', 'language', 'pageCount', 'fileSizeInMB'
+      ]) && data.keys().size() == 16 &&
+      data.title is string && data.title.size() <= 200 &&
+      data.seoslug is string && data.seoslug.size() <= 200 &&
+      data.category is string && data.category.size() <= 100 &&
+      data.publsher is string && data.publsher.size() <= 100 &&
+      data.pdfurl is string && data.pdfurl.size() <= 500 &&
+      data.sampleurl is string && data.sampleurl.size() <= 500 &&
+      data.listprice is string && data.listprice.size() <= 20 &&
+      data.buyprice is string && data.buyprice.size() <= 20 &&
+      data.seoDescription is string && data.seoDescription.size() <= 500 &&
+      data.fullDescription is string && data.fullDescription.size() <= 5000 &&
+      data.tags is list && data.tags.size() <= 10 && (data.tags.size() == 0 || data.tags[0] is string) &&
+      data.averageRating is number &&
+      data.reviewCount is number &&
+      data.language is string && data.language.size() <= 50 &&
+      data.pageCount is number &&
+      data.fileSizeInMB is number;
+    }
+    
+    function isValidPurchase(data) {
+      return data.keys().hasAll(['userId', 'bookId', 'title', 'seoslug', 'category', 'purchasedAt']) && data.keys().size() == 6 &&
+             data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+             data.bookId is string && data.bookId.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.seoslug is string && data.seoslug.size() <= 200 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.purchasedAt is string && data.purchasedAt.size() <= 100;
+    }
+    
+    match /categories/{categoryId} {
+      allow get: if isValidId(categoryId);
+      allow list: if true;
+      allow create: if isSignedIn() && isValidId(categoryId) && isValidCategory(incoming());
+      // No updates or deletes allowed for now
+    }
+    
+    match /books/{bookId} {
+      allow get: if isValidId(bookId);
+      allow list: if true;
+      allow create: if isSignedIn() && isValidId(bookId) && isValidBook(incoming());
+      // No updates or deletes allowed for now
+    }
+    
+    match /purchases/{purchaseId} {
+      allow get: if isSignedIn() && isValidId(purchaseId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(purchaseId) && isValidPurchase(incoming());
+      // No updates or deletes allowed for now
+    }
+  }
+}

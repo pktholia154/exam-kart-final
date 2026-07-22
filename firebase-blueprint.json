@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "Book category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "seoslug": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["name", "seoslug"]
+    },
+    "Book": {
+      "title": "Book",
+      "description": "E-Book",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 200 },
+        "seoslug": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "publsher": { "type": "string", "maxLength": 100 },
+        "pdfurl": { "type": "string", "maxLength": 500 },
+        "sampleurl": { "type": "string", "maxLength": 500 },
+        "listprice": { "type": "string", "maxLength": 20 },
+        "buyprice": { "type": "string", "maxLength": 20 },
+        "seoDescription": { "type": "string", "maxLength": 500 },
+        "fullDescription": { "type": "string", "maxLength": 5000 },
+        "tags": { "type": "array", "items": { "type": "string", "maxLength": 50 }, "maxItems": 10 },
+        "averageRating": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "language": { "type": "string", "maxLength": 50 },
+        "pageCount": { "type": "number" },
+        "fileSizeInMB": { "type": "number" }
+      },
+      "required": [
+        "title",
+        "seoslug",
+        "category",
+        "publsher",
+        "pdfurl",
+        "sampleurl",
+        "listprice",
+        "buyprice",
+        "seoDescription",
+        "fullDescription",
+        "tags",
+        "averageRating",
+        "reviewCount",
+        "language",
+        "pageCount",
+        "fileSizeInMB"
+      ]
+    },
+    "Purchase": {
+      "title": "Purchase",
+      "description": "Book purchase record by user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "bookId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "seoslug": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "purchasedAt": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["userId", "bookId", "title", "seoslug", "category", "purchasedAt"]
+    }
+  },
+  "firestore": {
+    "categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Categories collection"
+    },
+    "books/{bookId}": {
+      "schema": { "$ref": "#/entities/Book" },
+      "description": "Books collection"
+    },
+    "purchases/{purchaseId}": {
+      "schema": { "$ref": "#/entities/Purchase" },
+      "description": "Purchases collection"
+    }
+  }
+}

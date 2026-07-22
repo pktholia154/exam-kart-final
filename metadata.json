@@ -1,0 +1,8 @@
+{
+  "name": "Remix2: Current Affairs E-Book Store",
+  "description": "Native-Feel PWA E-Book Store with procedural covers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
