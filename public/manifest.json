@@ -1,0 +1,15 @@
+{
+  "name": "Current Affairs E-Book Store",
+  "short_name": "EBook Store",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F5F7",
+  "theme_color": "#3A20BA",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
