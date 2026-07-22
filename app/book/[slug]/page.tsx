@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { use, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { addDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
@@ -20,8 +20,8 @@ const defaultBooks = [
   { id: "8", title: "CTET Paper 1 & 2", seoslug: "ctet-paper-1-2", category: "Teaching", buyprice: "159", listprice: "249", averageRating: 4.5, reviewCount: 410, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." }
 ];
 
-export default function BookDetailsPage() {
-  const params = useParams();
+export default function BookDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
+  const unwrappedParams = use(params);
   const router = useRouter();
   const { user } = useAuth();
   const [book, setBook] = useState<any>(null);
@@ -32,29 +32,33 @@ export default function BookDetailsPage() {
 
   useEffect(() => {
     const fetchBook = async () => {
-      // Safely unwrap params using React.use if needed, but useParams is synchronous in Next 15.
-      // However, useParams might return null/undefined during first render in some edge cases.
-      const slug = params?.slug;
-      if (!slug) return;
+      let slugRaw = unwrappedParams.slug;
+      if (!slugRaw) return;
+      const slug = Array.isArray(slugRaw) ? slugRaw[0] : slugRaw;
+      const decodedSlug = decodeURIComponent(slug);
       
       try {
-        const q = query(collection(db, "books"), where("seoslug", "==", slug));
+        const q = query(collection(db, "books"), where("seoslug", "==", decodedSlug));
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
           setBook({ id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() });
         } else {
           // Fallback
-          const fallbackBook = defaultBooks.find(b => b.seoslug === slug);
+          const fallbackBook = defaultBooks.find(b => b.seoslug === decodedSlug);
           if (fallbackBook) {
             setBook(fallbackBook);
+          } else {
+            setBook(null);
           }
         }
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, 'books');
-        const fallbackBook = defaultBooks.find(b => b.seoslug === slug);
+        const fallbackBook = defaultBooks.find(b => b.seoslug === decodedSlug);
         if (fallbackBook) {
           setBook(fallbackBook);
+        } else {
+          setBook(null);
         }
       } finally {
         setLoading(false);
@@ -62,7 +66,7 @@ export default function BookDetailsPage() {
     };
 
     fetchBook();
-  }, [params?.slug]);
+  }, [unwrappedParams?.slug]);
 
   useEffect(() => {
     let active = true;
@@ -95,7 +99,7 @@ export default function BookDetailsPage() {
     return () => {
       active = false;
     };
-  }, [user, book?.id]);
+  }, [user, book?.id, unwrappedParams.slug]);
 
   const handleBuy = async () => {
     if (!user) {

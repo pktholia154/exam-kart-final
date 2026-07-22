@@ -7,10 +7,12 @@ import firebaseRulesPlugin from '@firebase/eslint-plugin-security-rules';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export default [
+const config = [
     {
       ignores: ['dist/**/*']
     },
     ...next,
     firebaseRulesPlugin.configs['flat/recommended']
 ];
+
+export default config;

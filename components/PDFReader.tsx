@@ -59,24 +59,28 @@ export default function PDFReader() {
 
     const loadSdkAndPdf = async () => {
       try {
+        const bookIdRaw = bookId;
+        const bookIdStr = Array.isArray(bookIdRaw) ? bookIdRaw[0] : bookIdRaw;
+        const decodedBookId = bookIdStr ? decodeURIComponent(bookIdStr) : '';
+        
         // Fetch book title and real PDF URL if bookId is available
-        if (bookId) {
+        if (decodedBookId) {
           try {
-            const docRef = doc(db, "books", bookId);
+            const docRef = doc(db, "books", decodedBookId);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
               const data = docSnap.data();
               if (data.title) setBookTitle(data.title);
               if (data.pdfurl) setPdfUrl(data.pdfurl); // Fixed key if it's pdfurl instead of pdfUrl based on schema
             } else {
-               const fallbackBook = defaultBooks.find(b => b.id === bookId);
+               const fallbackBook = defaultBooks.find(b => b.id === decodedBookId);
                if (fallbackBook) {
                  setBookTitle(fallbackBook.title);
                }
             }
           } catch (e) {
             console.error("Error loading book metadata from Firestore:", e);
-            const fallbackBook = defaultBooks.find(b => b.id === bookId);
+            const fallbackBook = defaultBooks.find(b => b.id === decodedBookId);
             if (fallbackBook) {
               setBookTitle(fallbackBook.title);
             }
