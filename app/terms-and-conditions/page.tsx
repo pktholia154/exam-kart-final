@@ -1,0 +1,107 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowLeft, FileText, Mail, MapPin, Globe } from "lucide-react";
+
+export default function TermsAndConditionsPage() {
+  return (
+    <main className="min-h-screen pt-4 pb-12 max-w-md mx-auto px-4">
+      {/* Top Bar */}
+      <div className="flex items-center gap-3 mb-6">
+        <Link 
+          href="/" 
+          className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-700 active:scale-95 transition-transform"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Terms & Conditions</h1>
+          <p className="text-[11px] text-gray-500 font-medium">Last updated: July 2026</p>
+        </div>
+      </div>
+
+      {/* Hero Badge */}
+      <div className="bg-gradient-to-br from-[#3A20BA] to-[#2053BA] rounded-3xl p-5 text-white shadow-md mb-6 relative overflow-hidden">
+        <div className="relative z-10 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold mb-1">Terms of Service</h2>
+            <p className="text-xs text-white/80 leading-relaxed">
+              Please review the terms governing your use of Exam Kart platform and digital e-book purchases.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Content Sections */}
+      <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-6 text-xs text-gray-700 leading-relaxed">
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">1. Agreement to Terms</h2>
+          <p>
+            By accessing <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] underline font-semibold">https://exam-kart.com/</a> or using our web application, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please refrain from using our platform.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">2. Digital Product License</h2>
+          <p>
+            All e-books, competitive exam study materials, CSAT guides, and mock papers purchased on Exam Kart are granted under a personal, non-exclusive, non-transferable license. You may download and view materials on your personal devices for individual study purposes only.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">3. Intellectual Property Rights</h2>
+          <p>
+            All content, procedural book covers, graphics, layout, software code, and educational content on this platform are protected by copyright laws and intellectual property rights belonging to Exam Kart.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">4. Prohibited Activities</h2>
+          <p>Users are strictly prohibited from:</p>
+          <ul className="list-disc pl-4 space-y-1 text-gray-600">
+            <li>Redistributing, selling, renting, or broadcasting purchased PDF e-books to third parties.</li>
+            <li>Attempting to bypass security mechanisms or scrape application content.</li>
+            <li>Using the service for illegal or unauthorized educational resale.</li>
+          </ul>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">5. User Accounts</h2>
+          <p>
+            You are responsible for maintaining the confidentiality of your account credentials. Exam Kart is not liable for losses caused by unauthorized account access resulting from user negligence.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">6. Disclaimers & Governing Law</h2>
+          <p>
+            Our materials are designed for competitive exam preparation. Exam Kart makes reasonable efforts to ensure accuracy but provides materials without guarantees regarding specific exam results. These terms are governed by the laws of India, with jurisdiction in Hisar, Haryana.
+          </p>
+        </section>
+
+        <section className="space-y-3 pt-2">
+          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">7. Contact Information</h2>
+          <p>For questions regarding these terms, please contact us:</p>
+
+          <div className="bg-[#F5F5F7] p-3 rounded-2xl space-y-2 text-[11px] font-medium text-gray-800">
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-[#3A20BA] shrink-0" />
+              <span>Email: <a href="mailto:pardeep1984@gmail.com" className="text-[#3A20BA] font-bold underline">pardeep1984@gmail.com</a></span>
+            </div>
+            <div className="flex items-start gap-2">
+              <MapPin className="w-4 h-4 text-[#3A20BA] shrink-0 mt-0.5" />
+              <span>Address: 282, Sector 4, Hisar Haryana 125001</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-[#3A20BA] shrink-0" />
+              <span>Web: <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] font-bold underline">https://exam-kart.com/</a></span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}

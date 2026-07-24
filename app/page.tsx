@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ChevronRight, BookOpen, Star, Download, Shield } from "lucide-react";
+import Link from "next/link";
+import { Search, ChevronRight, BookOpen, Star, Download, Shield, ShieldCheck, FileText, RefreshCw, Mail, MapPin, Globe } from "lucide-react";
 import { collection, getDocs, writeBatch, doc } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
 import { BookCard } from "@/components/BookCard";
@@ -216,8 +217,90 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Footer & Policy Navigation Section */}
+        <section className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-5">
+          <div className="border-b border-gray-100 pb-3">
+            <h2 className="text-sm font-bold text-gray-900 tracking-tight mb-1">Quick Links & Policies</h2>
+            <p className="text-[11px] text-gray-500">Legal, support, and contact details for Exam Kart</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Link 
+              href="/privacy-policy" 
+              className="p-3 bg-[#F5F5F7] rounded-2xl flex flex-col justify-between hover:bg-[#3A20BA]/5 border border-transparent hover:border-[#3A20BA]/20 transition-all group"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#3A20BA]/10 text-[#3A20BA] flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-gray-900 group-hover:text-[#3A20BA]">Privacy Policy</h3>
+                <p className="text-[10px] text-gray-500">Data usage & protection</p>
+              </div>
+            </Link>
+
+            <Link 
+              href="/terms-and-conditions" 
+              className="p-3 bg-[#F5F5F7] rounded-2xl flex flex-col justify-between hover:bg-[#2053BA]/5 border border-transparent hover:border-[#2053BA]/20 transition-all group"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#2053BA]/10 text-[#2053BA] flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <FileText className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-gray-900 group-hover:text-[#2053BA]">Terms & Conditions</h3>
+                <p className="text-[10px] text-gray-500">User license & agreement</p>
+              </div>
+            </Link>
+
+            <Link 
+              href="/refund-and-cancellation" 
+              className="p-3 bg-[#F5F5F7] rounded-2xl flex flex-col justify-between hover:bg-[#53BA20]/5 border border-transparent hover:border-[#53BA20]/20 transition-all group"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#53BA20]/10 text-[#53BA20] flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <RefreshCw className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-gray-900 group-hover:text-[#53BA20]">Refund & Returns</h3>
+                <p className="text-[10px] text-gray-500">Cancellation policies</p>
+              </div>
+            </Link>
+
+            <Link 
+              href="/contact-us" 
+              className="p-3 bg-[#F5F5F7] rounded-2xl flex flex-col justify-between hover:bg-[#8720BA]/5 border border-transparent hover:border-[#8720BA]/20 transition-all group"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#8720BA]/10 text-[#8720BA] flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                <Mail className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-gray-900 group-hover:text-[#8720BA]">Contact Us</h3>
+                <p className="text-[10px] text-gray-500">Support & inquiries</p>
+              </div>
+            </Link>
+          </div>
+
+          {/* Contact Summary Box */}
+          <div className="bg-[#3A20BA]/5 rounded-2xl p-3.5 border border-[#3A20BA]/10 space-y-2 text-[11px]">
+            <div className="flex items-center gap-2 text-gray-800">
+              <Mail className="w-3.5 h-3.5 text-[#3A20BA] shrink-0" />
+              <span className="truncate"><strong>Email:</strong> <a href="mailto:pardeep1984@gmail.com" className="text-[#3A20BA] font-bold underline">pardeep1984@gmail.com</a></span>
+            </div>
+            <div className="flex items-start gap-2 text-gray-800">
+              <MapPin className="w-3.5 h-3.5 text-[#3A20BA] shrink-0 mt-0.5" />
+              <span><strong>Address:</strong> 282, Sector 4, Hisar Haryana 125001</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-800">
+              <Globe className="w-3.5 h-3.5 text-[#3A20BA] shrink-0" />
+              <span className="truncate"><strong>Web:</strong> <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] font-bold underline">https://exam-kart.com/</a></span>
+            </div>
+          </div>
+
+          <div className="pt-1 text-center">
+            <p className="text-[10px] text-gray-400 font-medium">© 2026 Exam Kart. All rights reserved.</p>
+          </div>
+        </section>
+
         {/* Admin Seed Button */}
-        <section className="pt-8 pb-4">
+        <section className="pt-2 pb-4">
           <button 
             onClick={handleSeedData}
             className="w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-bold active:scale-[0.98] transition-transform"
