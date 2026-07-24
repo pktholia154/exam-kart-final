@@ -40,7 +40,7 @@ export default function TermsAndConditionsPage() {
         <section className="space-y-2">
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">1. Agreement to Terms</h2>
           <p>
-            By accessing <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] underline font-semibold">https://exam-kart.com/</a> or using our web application, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please refrain from using our platform.
+            By accessing <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] underline font-semibold">https://exam-kart.com/</a> or using our web application provided by brand <strong>Exam Kart</strong> (Legal Name: <strong>Pardeep Kumar</strong>), you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please refrain from using our platform.
           </p>
         </section>
 
@@ -87,9 +87,15 @@ export default function TermsAndConditionsPage() {
           <p>For questions regarding these terms, please contact us:</p>
 
           <div className="bg-[#F5F5F7] p-3 rounded-2xl space-y-2 text-[11px] font-medium text-gray-800">
+            <div>
+              <span><strong>Legal Name:</strong> Pardeep Kumar</span>
+            </div>
+            <div>
+              <span><strong>Brand Name:</strong> Exam Kart</span>
+            </div>
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-[#3A20BA] shrink-0" />
-              <span>Email: <a href="mailto:pardeep1984@gmail.com" className="text-[#3A20BA] font-bold underline">pardeep1984@gmail.com</a></span>
+              <span>Email: <a href="mailto:support@exam-kart.com" className="text-[#3A20BA] font-bold underline">support@exam-kart.com</a></span>
             </div>
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 text-[#3A20BA] shrink-0 mt-0.5" />

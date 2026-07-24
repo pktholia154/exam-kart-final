@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
           <div>
             <h2 className="text-sm font-bold mb-1">Your Privacy Matters</h2>
             <p className="text-xs text-white/80 leading-relaxed">
-              At Exam Kart, we prioritize protecting your personal information and ensuring full transparency regarding data collection and usage.
+              At <strong>Exam Kart</strong> (Legal entity: <strong>Pardeep Kumar</strong>), we prioritize protecting your personal information and ensuring full transparency regarding data collection and usage.
             </p>
           </div>
         </div>
@@ -86,9 +86,15 @@ export default function PrivacyPolicyPage() {
           <p>If you have questions or wish to request data updates/deletion, contact us at:</p>
 
           <div className="bg-[#F5F5F7] p-3 rounded-2xl space-y-2 text-[11px] font-medium text-gray-800">
+            <div>
+              <span><strong>Legal Name:</strong> Pardeep Kumar</span>
+            </div>
+            <div>
+              <span><strong>Brand Name:</strong> Exam Kart</span>
+            </div>
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-[#3A20BA] shrink-0" />
-              <span>Email: <a href="mailto:pardeep1984@gmail.com" className="text-[#3A20BA] font-bold underline">pardeep1984@gmail.com</a></span>
+              <span>Email: <a href="mailto:support@exam-kart.com" className="text-[#3A20BA] font-bold underline">support@exam-kart.com</a></span>
             </div>
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 text-[#3A20BA] shrink-0 mt-0.5" />

@@ -279,10 +279,15 @@ export default function Home() {
           </div>
 
           {/* Contact Summary Box */}
-          <div className="bg-[#3A20BA]/5 rounded-2xl p-3.5 border border-[#3A20BA]/10 space-y-2 text-[11px]">
+          <div className="bg-[#3A20BA]/5 rounded-2xl p-3.5 border border-[#3A20BA]/10 space-y-1.5 text-[11px]">
+            <div className="text-gray-900 font-semibold">
+              <span><strong>Legal Name:</strong> Pardeep Kumar</span>
+              <span className="mx-1.5">|</span>
+              <span><strong>Brand Name:</strong> Exam Kart</span>
+            </div>
             <div className="flex items-center gap-2 text-gray-800">
               <Mail className="w-3.5 h-3.5 text-[#3A20BA] shrink-0" />
-              <span className="truncate"><strong>Email:</strong> <a href="mailto:pardeep1984@gmail.com" className="text-[#3A20BA] font-bold underline">pardeep1984@gmail.com</a></span>
+              <span className="truncate"><strong>Email:</strong> <a href="mailto:support@exam-kart.com" className="text-[#3A20BA] font-bold underline">support@exam-kart.com</a></span>
             </div>
             <div className="flex items-start gap-2 text-gray-800">
               <MapPin className="w-3.5 h-3.5 text-[#3A20BA] shrink-0 mt-0.5" />

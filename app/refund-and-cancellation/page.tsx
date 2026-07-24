@@ -75,7 +75,7 @@ export default function RefundAndCancellationPage() {
           <p>To initiate a refund request, follow these steps:</p>
 
           <ol className="list-decimal pl-4 space-y-1.5 text-gray-600">
-            <li>Send an email to <a href="mailto:pardeep1984@gmail.com" className="text-[#3A20BA] font-bold underline">pardeep1984@gmail.com</a> within <strong>7 days</strong> of purchase.</li>
+            <li>Send an email to <a href="mailto:support@exam-kart.com" className="text-[#3A20BA] font-bold underline">support@exam-kart.com</a> within <strong>7 days</strong> of purchase.</li>
             <li>Include your registered email ID, transaction reference number, and book title.</li>
             <li>Provide a brief description or screenshot of the issue faced.</li>
           </ol>
@@ -92,9 +92,15 @@ export default function RefundAndCancellationPage() {
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">6. Contact for Refund Inquiries</h2>
 
           <div className="bg-[#F5F5F7] p-3 rounded-2xl space-y-2 text-[11px] font-medium text-gray-800">
+            <div>
+              <span><strong>Legal Name:</strong> Pardeep Kumar</span>
+            </div>
+            <div>
+              <span><strong>Brand Name:</strong> Exam Kart</span>
+            </div>
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-[#3A20BA] shrink-0" />
-              <span>Email: <a href="mailto:pardeep1984@gmail.com" className="text-[#3A20BA] font-bold underline">pardeep1984@gmail.com</a></span>
+              <span>Email: <a href="mailto:support@exam-kart.com" className="text-[#3A20BA] font-bold underline">support@exam-kart.com</a></span>
             </div>
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 text-[#3A20BA] shrink-0 mt-0.5" />

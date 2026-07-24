@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Mail, MapPin, Globe, Send, CheckCircle2, Copy, Check } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Globe, Send, CheckCircle2, Copy, Check, User, Building } from "lucide-react";
 
 export default function ContactUsPage() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -59,6 +59,29 @@ export default function ContactUsPage() {
 
       {/* Quick Contact Cards */}
       <div className="space-y-3 mb-6">
+        {/* Entity & Brand Card */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#3A20BA]/10 flex items-center justify-center text-[#3A20BA] shrink-0">
+              <User className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Legal Name</p>
+              <p className="text-xs font-bold text-gray-900">Pardeep Kumar</p>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#2053BA]/10 flex items-center justify-center text-[#2053BA] shrink-0">
+              <Building className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Brand Name</p>
+              <p className="text-xs font-bold text-gray-900">Exam Kart</p>
+            </div>
+          </div>
+        </div>
+
         {/* Email Card */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
@@ -67,13 +90,13 @@ export default function ContactUsPage() {
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email Address</p>
-              <a href="mailto:pardeep1984@gmail.com" className="text-xs font-bold text-gray-900 truncate block hover:text-[#3A20BA]">
-                pardeep1984@gmail.com
+              <a href="mailto:support@exam-kart.com" className="text-xs font-bold text-gray-900 truncate block hover:text-[#3A20BA]">
+                support@exam-kart.com
               </a>
             </div>
           </div>
           <button 
-            onClick={() => handleCopy("pardeep1984@gmail.com", "email")}
+            onClick={() => handleCopy("support@exam-kart.com", "email")}
             className="p-2 rounded-lg text-gray-400 hover:text-[#3A20BA] active:scale-90 transition-transform"
             title="Copy email"
           >
