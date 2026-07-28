@@ -1,462 +1,554 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { 
-  ArrowLeft, 
-  Settings, 
-  ChevronLeft, 
-  ChevronRight, 
-  Bookmark, 
-  Loader2, 
-  Plus, 
-  Minus, 
-  Sun, 
-  Moon, 
-  BookOpen,
-  Share2
-} from "lucide-react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-
-const defaultBooks = [
-  { id: "1", title: "IBPS Clerk Paper", seoslug: "ibps-clerk-paper", category: "Banking Exams", buyprice: "99", listprice: "199", averageRating: 4.5, reviewCount: 128, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "2", title: "SBI PO Mains 2024", seoslug: "sbi-po-mains-2024", category: "Banking Exams", buyprice: "149", listprice: "249", averageRating: 4.8, reviewCount: 340, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "3", title: "UPSC Prelims CSAT", seoslug: "upsc-prelims-csat", category: "UPSC", buyprice: "199", listprice: "299", averageRating: 4.6, reviewCount: 512, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "4", title: "SSC CGL Tier 1", seoslug: "ssc-cgl-tier-1", category: "SSC", buyprice: "89", listprice: "149", averageRating: 4.3, reviewCount: 204, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "5", title: "RRB NTPC Guide", seoslug: "rrb-ntpc-guide", category: "Railways", buyprice: "129", listprice: "199", averageRating: 4.2, reviewCount: 156, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "6", title: "NDA Mathematics", seoslug: "nda-mathematics", category: "Defense", buyprice: "179", listprice: "249", averageRating: 4.7, reviewCount: 289, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "7", title: "LIC AAO Mock", seoslug: "lic-aao-mock", category: "Insurance", buyprice: "79", listprice: "129", averageRating: 4.4, reviewCount: 92, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "8", title: "CTET Paper 1 & 2", seoslug: "ctet-paper-1-2", category: "Teaching", buyprice: "159", listprice: "249", averageRating: 4.5, reviewCount: 410, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." }
-];
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
+import { fetchFirestoreBookBySlugOrId } from "@/lib/books-store";
 
 export default function PDFReader() {
   const router = useRouter();
   const params = useParams();
-  const bookId = params?.bookId as string;
+  const searchParams = useSearchParams();
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const renderTaskRef = useRef<any>(null);
+  const bookIdParam = params?.bookId;
+  const rawBookId = Array.isArray(bookIdParam) ? bookIdParam[0] : bookIdParam;
+  const decodedBookId = rawBookId ? decodeURIComponent(rawBookId) : "";
 
-  const [bookTitle, setBookTitle] = useState<string>("E-Book Reader");
-  const [pdfUrl, setPdfUrl] = useState<string>("https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf");
-  
-  const [isSdkLoaded, setIsSdkLoaded] = useState(false);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const readType = searchParams?.get("type") || searchParams?.get("mode") || "full";
+  const explicitUrl = searchParams?.get("file") || searchParams?.get("url");
+
+  const [bookTitle, setBookTitle] = useState<string>("PDF Book Viewer");
+  const [fileUrl, setFileUrl] = useState<string>("");
+  const [isUrlResolved, setIsUrlResolved] = useState(false);
+
+  const [isPdfLoaded, setIsPdfLoaded] = useState<boolean>(false);
   const [numPages, setNumPages] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [zoom, setZoom] = useState(1.0);
-  const [theme, setTheme] = useState<'light' | 'sepia' | 'dark'>('light');
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [containerWidth, setContainerWidth] = useState<number>(360);
-  const [showSettings, setShowSettings] = useState(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [scale, setScale] = useState<number>(1.0);
+  const [fitToWidth, setFitToWidth] = useState<boolean>(true);
 
-  // Load PDF.js SDK dynamically from CDN to avoid Next.js build-time SSR issues
+  const [isLoading, setIsLoading] = useState(true);
+  const [useFallback, setUseFallback] = useState(false);
+  const [fallbackSrc, setFallbackSrc] = useState<string>("");
+  const [noUrlError, setNoUrlError] = useState(false);
+
+  const scrollViewRef = useRef<HTMLDivElement | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+  const pageWrappersRef = useRef<HTMLDivElement[]>([]);
+  const pageCanvasesRef = useRef<HTMLCanvasElement[]>([]);
+  const pageRenderStatesRef = useRef<boolean[]>([]);
+  const activeRenderTasksRef = useRef<Record<number, any>>({});
+  const renderObserverRef = useRef<IntersectionObserver | null>(null);
+  const activePageObserverRef = useRef<IntersectionObserver | null>(null);
+  const isLoadedRef = useRef<boolean>(false);
+  const pdfDocRef = useRef<any>(null);
+
+  const scaleRef = useRef<number>(1.0);
+  const fitToWidthRef = useRef<boolean>(true);
+
+  // Sync refs
+  useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
+
+  useEffect(() => {
+    fitToWidthRef.current = fitToWidth;
+  }, [fitToWidth]);
+
+  // 1. Resolve Target PDF URL from Search Params or Firestore
   useEffect(() => {
     let active = true;
 
-    const loadSdkAndPdf = async () => {
-      try {
-        const bookIdRaw = bookId;
-        const bookIdStr = Array.isArray(bookIdRaw) ? bookIdRaw[0] : bookIdRaw;
-        const decodedBookId = bookIdStr ? decodeURIComponent(bookIdStr) : '';
-        
-        // Fetch book title and real PDF URL if bookId is available
-        if (decodedBookId) {
-          try {
-            const docRef = doc(db, "books", decodedBookId);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-              const data = docSnap.data();
-              if (data.title) setBookTitle(data.title);
-              if (data.pdfurl) setPdfUrl(data.pdfurl); // Fixed key if it's pdfurl instead of pdfUrl based on schema
+    async function resolveUrl() {
+      let firestoreUrl = "";
+
+      if (decodedBookId) {
+        try {
+          const bookData = await fetchFirestoreBookBySlugOrId(decodedBookId);
+          if (active && bookData) {
+            if (bookData.title) setBookTitle(bookData.title);
+
+            if (readType === "sample") {
+              firestoreUrl = bookData.sampleurl || bookData.pdfurl || "";
             } else {
-               const fallbackBook = defaultBooks.find(b => b.id === decodedBookId);
-               if (fallbackBook) {
-                 setBookTitle(fallbackBook.title);
-               }
-            }
-          } catch (e) {
-            console.error("Error loading book metadata from Firestore:", e);
-            const fallbackBook = defaultBooks.find(b => b.id === decodedBookId);
-            if (fallbackBook) {
-              setBookTitle(fallbackBook.title);
+              firestoreUrl = bookData.pdfurl || bookData.sampleurl || "";
             }
           }
+        } catch (e) {
+          console.warn("Error fetching book details for reader:", e);
         }
-
-        if (typeof window === 'undefined') return;
-
-        // Check if already loaded
-        if ((window as any).pdfjsLib) {
-          if (active) setIsSdkLoaded(true);
-          return;
-        }
-
-        // Dynamically append script tags for pdf.js and pdf.worker.js
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-        script.async = true;
-        
-        script.onload = () => {
-          const pdfjsLib = (window as any).pdfjsLib;
-          if (pdfjsLib) {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-            if (active) setIsSdkLoaded(true);
-          }
-        };
-
-        script.onerror = () => {
-          if (active) setError("Failed to load the PDF reader engine.");
-        };
-
-        document.head.appendChild(script);
-
-      } catch (err) {
-        console.error("SDK load error:", err);
-        if (active) setError("Could not initialize the reader.");
       }
-    };
 
-    loadSdkAndPdf();
+      const targetUrl = firestoreUrl || (explicitUrl ? decodeURIComponent(explicitUrl) : "");
 
-    // Responsive container width calculations
-    const updateWidth = () => {
-      if (typeof window !== 'undefined') {
-        const w = window.innerWidth;
-        setContainerWidth(w > 448 ? 448 : w);
-      }
-    };
-
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-
-    // Retrieve saved bookmarks / page positions
-    if (bookId) {
-      const savedPage = localStorage.getItem(`read_page_${bookId}`);
-      const bookmarkState = localStorage.getItem(`bookmark_${bookId}`);
-      Promise.resolve().then(() => {
-        if (active) {
-          if (savedPage) {
-            setCurrentPage(parseInt(savedPage, 10));
-          }
-          if (bookmarkState === 'true') {
-            setIsBookmarked(true);
-          }
+      if (active) {
+        if (targetUrl) {
+          setFileUrl(targetUrl);
+          setIsUrlResolved(true);
+        } else {
+          setNoUrlError(true);
+          setIsLoading(false);
+          setIsUrlResolved(true);
         }
-      });
+      }
     }
 
-    return () => {
-      active = false;
-      window.removeEventListener('resize', updateWidth);
-    };
-  }, [bookId]);
-
-  // Handle PDF parsing once the SDK is loaded
-  useEffect(() => {
-    if (!isSdkLoaded) return;
-
-    let active = true;
-    Promise.resolve().then(() => {
-      if (active) {
-        setLoading(true);
-        setError(null);
-      }
-    });
-
-    const pdfjsLib = (window as any).pdfjsLib;
-    if (!pdfjsLib) return;
-
-    const loadingTask = pdfjsLib.getDocument(pdfUrl);
-    loadingTask.promise.then((pdf: any) => {
-      if (!active) return;
-      setPdfDoc(pdf);
-      setNumPages(pdf.numPages);
-      setLoading(false);
-    }).catch((err: any) => {
-      console.error("Error loading PDF document:", err);
-      if (active) {
-        setError("Failed to render the document. Please verify the URL or format.");
-        setLoading(false);
-      }
-    });
+    resolveUrl();
 
     return () => {
       active = false;
     };
-  }, [isSdkLoaded, pdfUrl]);
+  }, [explicitUrl, decodedBookId, readType]);
 
-  // Handle page rendering on canvas whenever currentPage, pdfDoc, zoom or containerWidth changes
-  useEffect(() => {
-    if (!pdfDoc) return;
+  // Fallback Frame Handler
+  const triggerFallbackFrame = useCallback((urlToUse: string) => {
+    if (isLoadedRef.current) return;
+    isLoadedRef.current = true;
+    setUseFallback(true);
+    setIsLoading(false);
 
-    let active = true;
+    if (urlToUse.startsWith("http://") || urlToUse.startsWith("https://")) {
+      setFallbackSrc(`https://docs.google.com/viewer?url=${encodeURIComponent(urlToUse)}&embedded=true`);
+    } else {
+      setFallbackSrc(urlToUse);
+    }
+  }, []);
 
-    pdfDoc.getPage(currentPage).then((page: any) => {
-      if (!active) return;
+  // Render a single page canvas with exact proportional scaling
+  const renderPage = useCallback(async (num: number, canvas: HTMLCanvasElement, wrapper: HTMLDivElement) => {
+    const doc = pdfDocRef.current;
+    if (!doc) return;
 
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+    // Cancel existing render task for this page if in progress
+    if (activeRenderTasksRef.current[num]) {
+      try {
+        activeRenderTasksRef.current[num].cancel();
+      } catch {
+        // Ignore cancel errors
+      }
+      delete activeRenderTasksRef.current[num];
+    }
 
-      const context = canvas.getContext('2d');
-      if (!context) return;
+    try {
+      const page = await doc.getPage(num);
+      const unscaledViewport = page.getViewport({ scale: 1.0 });
 
-      // Fit page to custom container width
-      const viewport = page.getViewport({ scale: 1.0 });
-      // Calculate scaled factor to fit container minus margin/padding
-      const fitScale = (containerWidth - 32) / viewport.width;
-      const finalScale = fitScale * zoom;
-      const scaledViewport = page.getViewport({ scale: finalScale });
+      // Determine correct zoom scale based on fitToWidth mode or user zoom
+      let renderScale = scaleRef.current;
+      const container = scrollViewRef.current;
+      const availableWidth = container ? Math.max(container.clientWidth - 24, 280) : window.innerWidth - 24;
 
-      // Handle High DPI / Retina Displays perfectly sharp
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = scaledViewport.width * dpr;
-      canvas.height = scaledViewport.height * dpr;
-      canvas.style.width = `${scaledViewport.width}px`;
-      canvas.style.height = `${scaledViewport.height}px`;
-      
-      context.scale(dpr, dpr);
+      if (fitToWidthRef.current && availableWidth > 0) {
+        renderScale = availableWidth / unscaledViewport.width;
+      }
+
+      const viewport = page.getViewport({ scale: renderScale });
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) return;
+
+      // High-DPI (Retina) scaling for crystal clear rendering
+      const dpr = Math.max(window.devicePixelRatio || 1, 2);
+
+      // Set canvas pixel buffer dimensions
+      canvas.width = Math.floor(viewport.width * dpr);
+      canvas.height = Math.floor(viewport.height * dpr);
+
+      const aspectWidth = Math.floor(viewport.width);
+      const aspectHeight = Math.floor(viewport.height);
+
+      canvas.style.width = `${aspectWidth}px`;
+      canvas.style.maxWidth = "100%";
+      canvas.style.height = "auto";
+      canvas.style.aspectRatio = `${aspectWidth} / ${aspectHeight}`;
+
+      if (wrapper) {
+        wrapper.style.maxWidth = `${aspectWidth}px`;
+        wrapper.style.aspectRatio = `${aspectWidth} / ${aspectHeight}`;
+      }
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      // Fill clean white background before rendering
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, viewport.width, viewport.height);
 
       const renderContext = {
-        canvasContext: context,
-        viewport: scaledViewport,
+        canvasContext: ctx,
+        viewport: viewport,
       };
 
-      // Cancel previous render task to avoid glitching/overlap
-      if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
+      const renderTask = page.render(renderContext);
+      activeRenderTasksRef.current[num] = renderTask;
+
+      await renderTask.promise;
+      delete activeRenderTasksRef.current[num];
+      ctx.restore();
+    } catch (err: any) {
+      if (err?.name !== "RenderingCancelledException") {
+        console.warn(`Render error on page ${num}:`, err);
+        pageRenderStatesRef.current[num] = false;
+      }
+    }
+  }, []);
+
+  // Setup Pages and Intersection Observers
+  const setupPages = useCallback(async () => {
+    const doc = pdfDocRef.current;
+    const canvasContainer = canvasContainerRef.current;
+    const scrollView = scrollViewRef.current;
+    if (!doc || !canvasContainer || !scrollView) return;
+
+    // Disconnect old observers
+    if (renderObserverRef.current) renderObserverRef.current.disconnect();
+    if (activePageObserverRef.current) activePageObserverRef.current.disconnect();
+
+    canvasContainer.replaceChildren();
+    pageWrappersRef.current = [];
+    pageCanvasesRef.current = [];
+    pageRenderStatesRef.current = new Array(doc.numPages + 1).fill(false);
+
+    // Get page 1 viewport to calculate initial page aspect ratio for placeholder wrappers
+    let sampleAspect = "1 / 1.414"; // Standard A4 default
+    try {
+      const page1 = await doc.getPage(1);
+      const vp1 = page1.getViewport({ scale: 1.0 });
+      sampleAspect = `${vp1.width} / ${vp1.height}`;
+    } catch (e) {
+      console.warn("Could not inspect page 1 viewport:", e);
+    }
+
+    // IntersectionObserver for Rendering on Scroll
+    renderObserverRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const pageNum = parseInt(entry.target.getAttribute("data-page-num") || "1", 10);
+            if (!pageRenderStatesRef.current[pageNum]) {
+              pageRenderStatesRef.current[pageNum] = true;
+              const canvasEl = entry.target.querySelector("canvas");
+              if (canvasEl) {
+                renderPage(pageNum, canvasEl as HTMLCanvasElement, entry.target as HTMLDivElement);
+              }
+            }
+          }
+        });
+      },
+      { root: scrollView, rootMargin: "600px 0px" }
+    );
+
+    // IntersectionObserver for Active Page Tracking
+    activePageObserverRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const pageNum = parseInt(entry.target.getAttribute("data-page-num") || "1", 10);
+            setCurrentPage(pageNum);
+          }
+        });
+      },
+      { root: scrollView, threshold: 0.25 }
+    );
+
+    for (let i = 1; i <= doc.numPages; i++) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "pdf-page-wrapper";
+      wrapper.setAttribute("data-page-num", i.toString());
+      wrapper.style.aspectRatio = sampleAspect;
+
+      const canvas = document.createElement("canvas");
+      canvas.className = "pdf-page-canvas";
+      canvas.setAttribute("data-page-num", i.toString());
+
+      wrapper.appendChild(canvas);
+      canvasContainer.appendChild(wrapper);
+
+      pageWrappersRef.current.push(wrapper);
+      pageCanvasesRef.current.push(canvas);
+
+      renderObserverRef.current.observe(wrapper);
+      activePageObserverRef.current.observe(wrapper);
+    }
+  }, [renderPage]);
+
+  // Re-render all pages
+  const reRenderAll = useCallback(() => {
+    setupPages();
+  }, [setupPages]);
+
+  // Handle window resize to adjust fit-to-width mode
+  useEffect(() => {
+    let resizeTimer: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (fitToWidthRef.current && pdfDocRef.current) {
+          reRenderAll();
+        }
+      }, 250);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(resizeTimer);
+    };
+  }, [reRenderAll]);
+
+  // Main PDF loading runner
+  useEffect(() => {
+    if (!isUrlResolved || !fileUrl || noUrlError) return;
+
+    let active = true;
+    let loadTimeout: NodeJS.Timeout;
+
+    // Safety timeout: 4 seconds fallback
+    loadTimeout = setTimeout(() => {
+      if (active && !isLoadedRef.current && !pdfDocRef.current) {
+        console.warn("PDF.js loading timeout reached. Switching to fallback viewer...");
+        triggerFallbackFrame(fileUrl);
+      }
+    }, 4000);
+
+    // Load PDF.js engine with Standard Fonts & CMaps configuration
+    async function initPdfEngine() {
+      if (!(window as any).pdfjsLib) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Failed to load pdf.js script"));
+          document.head.appendChild(script);
+        });
       }
 
-      const renderTask = page.render(renderContext);
-      renderTaskRef.current = renderTask;
+      const pdfjsLib = (window as any).pdfjsLib;
+      if (pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      }
 
-      renderTask.promise.then(() => {
-        renderTaskRef.current = null;
-      }).catch((err: any) => {
-        // Silently handle cancelled render tasks
-      });
-    });
+      const pdfDocumentConfig = {
+        cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/",
+        cMapPacked: true,
+        standardFontDataUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/",
+      };
 
-    // Save page progression to local storage
-    if (bookId) {
-      localStorage.setItem(`read_page_${bookId}`, currentPage.toString());
+      // First attempt: Fetch ArrayBuffer directly
+      try {
+        const response = await fetch(fileUrl, { mode: "cors" });
+        if (!response.ok) throw new Error("Network response not OK");
+        const arrayBuffer = await response.arrayBuffer();
+
+        if (!active) return;
+        const loadingTask = pdfjsLib.getDocument({
+          data: arrayBuffer,
+          ...pdfDocumentConfig,
+        });
+        const doc = await loadingTask.promise;
+
+        if (!active) return;
+        clearTimeout(loadTimeout);
+        isLoadedRef.current = true;
+        pdfDocRef.current = doc;
+        setIsPdfLoaded(true);
+        setNumPages(doc.numPages);
+        setIsLoading(false);
+
+        setupPages();
+      } catch (fetchErr) {
+        console.warn("Direct fetch ArrayBuffer failed/CORS. Attempting proxy load...", fetchErr);
+        if (!active) return;
+        tryProxyLoad(pdfjsLib, pdfDocumentConfig);
+      }
     }
+
+    async function tryProxyLoad(pdfjsLib: any, pdfConfig: any) {
+      const proxyUrl = "/api/pdf?url=" + encodeURIComponent(fileUrl);
+
+      try {
+        const loadingTask = pdfjsLib.getDocument({
+          url: proxyUrl,
+          withCredentials: false,
+          ...pdfConfig,
+        });
+        const doc = await loadingTask.promise;
+
+        if (!active) return;
+        clearTimeout(loadTimeout);
+        isLoadedRef.current = true;
+        pdfDocRef.current = doc;
+        setIsPdfLoaded(true);
+        setNumPages(doc.numPages);
+        setIsLoading(false);
+
+        setupPages();
+      } catch (error) {
+        console.warn("PDF.js failed to load document via proxy. Triggering fallback frame...", error);
+        if (!active) return;
+        clearTimeout(loadTimeout);
+        triggerFallbackFrame(fileUrl);
+      }
+    }
+
+    initPdfEngine().catch((err) => {
+      console.warn("PDF initialization error:", err);
+      if (active) {
+        clearTimeout(loadTimeout);
+        triggerFallbackFrame(fileUrl);
+      }
+    });
 
     return () => {
       active = false;
+      if (loadTimeout) clearTimeout(loadTimeout);
+      if (renderObserverRef.current) renderObserverRef.current.disconnect();
+      if (activePageObserverRef.current) activePageObserverRef.current.disconnect();
     };
-  }, [pdfDoc, currentPage, zoom, containerWidth, bookId]);
+  }, [fileUrl, isUrlResolved, noUrlError, setupPages, triggerFallbackFrame]);
 
-  const handleToggleBookmark = () => {
-    const newState = !isBookmarked;
-    setIsBookmarked(newState);
-    if (bookId) {
-      localStorage.setItem(`bookmark_${bookId}`, newState.toString());
+  // Handle page jump from floating bar input
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value, 10);
+    setCurrentPage(val || 1);
+    if (val >= 1 && pdfDocRef.current && val <= pdfDocRef.current.numPages) {
+      const targetWrapper = pageWrappersRef.current[val - 1];
+      if (targetWrapper) {
+        targetWrapper.scrollIntoView({ behavior: "smooth" });
+      }
     }
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: bookTitle,
-        text: `Reading ${bookTitle}`,
-        url: window.location.href,
-      }).catch(console.error);
-    } else {
-      alert("Link copied to clipboard!");
-      navigator.clipboard.writeText(window.location.href);
-    }
+  // Zoom In
+  const handleZoomIn = () => {
+    setFitToWidth(false);
+    setScale((prev) => {
+      const next = +(prev + 0.25).toFixed(2);
+      scaleRef.current = next;
+      setTimeout(reRenderAll, 0);
+      return next;
+    });
   };
 
-  // Theme styling helpers
-  const getThemeClasses = () => {
-    switch (theme) {
-      case 'sepia':
-        return {
-          bg: 'bg-[#FAF6EE]',
-          text: 'text-[#433422]',
-          navBg: 'bg-[#F4ECD8]/95 backdrop-blur-md',
-          border: 'border-[#E6DBC4]',
-          card: 'bg-[#F4ECD8] shadow-sm border border-[#E6DBC4]/60',
-          btnActive: 'bg-[#433422]/10 text-[#433422]',
-          accent: 'text-[#8720BA]'
-        };
-      case 'dark':
-        return {
-          bg: 'bg-[#121212]',
-          text: 'text-[#E0E0E0]',
-          navBg: 'bg-[#1E1E1E]/95 backdrop-blur-md',
-          border: 'border-[#2D2D2D]',
-          card: 'bg-[#1E1E1E] shadow-none border border-[#2D2D2D]',
-          btnActive: 'bg-[#E0E0E0]/15 text-white',
-          accent: 'text-[#8720BA]'
-        };
-      default:
-        return {
-          bg: 'bg-[#F5F5F7]',
-          text: 'text-gray-900',
-          navBg: 'bg-white/95 backdrop-blur-md',
-          border: 'border-gray-100',
-          card: 'bg-white shadow-sm border border-gray-100',
-          btnActive: 'bg-[#3A20BA]/10 text-[#3A20BA]',
-          accent: 'text-[#3A20BA]'
-        };
-    }
+  // Zoom Out
+  const handleZoomOut = () => {
+    setFitToWidth(false);
+    setScale((prev) => {
+      if (prev <= 0.4) return prev;
+      const next = +(prev - 0.25).toFixed(2);
+      scaleRef.current = next;
+      setTimeout(reRenderAll, 0);
+      return next;
+    });
   };
 
-  const classes = getThemeClasses();
+  // Toggle Fit to Width
+  const handleToggleFitWidth = () => {
+    setFitToWidth((prev) => {
+      const next = !prev;
+      fitToWidthRef.current = next;
+      if (next) {
+        setScale(1.0);
+        scaleRef.current = 1.0;
+      }
+      setTimeout(reRenderAll, 0);
+      return next;
+    });
+  };
 
   return (
-    <main className={`min-h-screen ${classes.bg} ${classes.text} flex flex-col relative pb-36 transition-colors duration-300`}>
-      {/* Top sticky header */}
-      <div className={`${classes.navBg} px-4 py-3 flex items-center justify-between border-b ${classes.border} sticky top-0 z-50 transition-colors duration-300`}>
-        <button 
-          onClick={() => router.back()} 
-          className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform bg-black/5 dark:bg-white/5`}
+    <div className="fixed inset-0 z-[100] w-screen h-screen bg-slate-900 text-slate-100 flex flex-col overflow-hidden select-none">
+      {/* Top Header Bar */}
+      <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md px-4 py-2.5 flex items-center justify-between border-b border-slate-800 shadow-sm">
+        <button
+          onClick={() => router.back()}
+          className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors active:scale-95"
+          title="Go Back"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <span className="text-xs font-bold truncate max-w-[180px] px-2">{bookTitle}</span>
-        <div className="flex items-center gap-1.5">
-          <button 
-            onClick={handleToggleBookmark}
-            className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform ${isBookmarked ? 'text-[#BA8720]' : ''}`}
-          >
-            <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
-          </button>
-          <button 
-            onClick={() => setShowSettings(!showSettings)}
-            className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform ${showSettings ? classes.btnActive : ''}`}
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Settings overlay sheet */}
-      {showSettings && (
-        <div className={`mx-auto max-w-md w-full p-4 border-b ${classes.border} ${classes.card} flex flex-col gap-4 animate-in slide-in-from-top duration-200`}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Reader Mode Options</span>
-            <button onClick={handleShare} className="flex items-center gap-1 text-xs font-bold text-[#3A20BA] dark:text-[#8720BA]">
-              <Share2 className="w-4 h-4" /> Share Progress
-            </button>
-          </div>
-          
-          {/* Zoom controls */}
-          <div className="flex items-center justify-between py-1 border-b border-dashed border-gray-200 dark:border-gray-800">
-            <span className="text-xs font-bold">Zoom Level</span>
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setZoom(z => Math.max(0.6, z - 0.1))}
-                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center active:scale-95 transition-transform"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="text-xs font-mono font-bold w-12 text-center">{Math.round(zoom * 100)}%</span>
-              <button 
-                onClick={() => setZoom(z => Math.min(2.0, z + 0.1))}
-                className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center active:scale-95 transition-transform"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Theme selector */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold">Paper Style</span>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setTheme('light')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border flex items-center gap-1 ${theme === 'light' ? 'bg-white text-gray-900 border-gray-300 shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent dark:bg-gray-800'}`}
-              >
-                <Sun className="w-3.5 h-3.5" /> Light
-              </button>
-              <button 
-                onClick={() => setTheme('sepia')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border flex items-center gap-1 ${theme === 'sepia' ? 'bg-[#FAF6EE] text-[#433422] border-[#E6DBC4] shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent dark:bg-gray-800'}`}
-              >
-                <BookOpen className="w-3.5 h-3.5" /> Sepia
-              </button>
-              <button 
-                onClick={() => setTheme('dark')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold border flex items-center gap-1 ${theme === 'dark' ? 'bg-[#1E1E1E] text-[#E0E0E0] border-[#2D2D2D] shadow-sm' : 'bg-gray-100 text-gray-500 border-transparent dark:bg-gray-800'}`}
-              >
-                <Moon className="w-3.5 h-3.5" /> Night
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main View Area */}
-      <div className="flex-1 max-w-md mx-auto w-full flex flex-col items-center justify-center pt-4 px-4 overflow-x-auto select-none">
-        {loading && (
-          <div className="flex flex-col items-center justify-center mt-32 text-gray-400">
-            <Loader2 className="w-8 h-8 animate-spin mb-4 text-[#3A20BA]" />
-            <p className="text-xs font-bold">Parsing PDF pages...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="mt-32 p-6 rounded-2xl bg-red-50 border border-red-100 text-red-500 text-xs font-bold max-w-xs text-center shadow-sm">
-            {error}
-          </div>
-        )}
-
-        {/* PDF Canvas Container */}
-        <div className={`relative ${loading || error ? 'hidden' : 'block'} ${classes.card} rounded-2xl overflow-hidden shadow-lg p-2 transition-transform duration-200`}>
-          <canvas ref={canvasRef} className="max-w-full block" />
-        </div>
-      </div>
-
-      {/* Persistent reader control sheet */}
-      {!loading && !error && (
-        <div className={`${classes.navBg} border-t ${classes.border} px-6 py-4 flex flex-col gap-4 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-40 pb-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] transition-colors duration-300`}>
-          {/* Progress Slider bar */}
-          <div className="flex items-center gap-4">
-            <span className="text-[10px] font-mono font-bold w-8 text-gray-400">{currentPage}</span>
-            <div className="flex-1 h-1.5 bg-black/5 dark:bg-white/10 rounded-full overflow-hidden relative">
-              <div className="absolute top-0 left-0 bottom-0 bg-[#3A20BA] dark:bg-[#8720BA]" style={{ width: numPages ? `${(currentPage / numPages) * 100}%` : '0%' }}></div>
-              <input 
-                type="range" 
-                min="1" 
-                max={numPages || 1} 
-                value={currentPage} 
-                onChange={(e) => setCurrentPage(Number(e.target.value))}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={!numPages}
-              />
-            </div>
-            <span className="text-[10px] font-mono font-bold w-8 text-right text-gray-400">{numPages || '-'}</span>
-          </div>
-          
-          {/* Back & Forth controls */}
-          <div className="flex justify-between items-center">
-            <button 
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="flex items-center gap-2 text-sm font-bold disabled:opacity-30 active:scale-95 transition-transform"
-            >
-              <ChevronLeft className="w-5 h-5" /> Prev
-            </button>
-            <span className="text-xs font-bold font-mono">
-              Page {currentPage} of {numPages || '-'}
+        <div className="flex flex-col items-center max-w-[240px] px-2 text-center">
+          <span className="text-xs font-bold text-slate-100 truncate w-full">{bookTitle}</span>
+          {readType === "sample" && (
+            <span className="text-[9px] font-black uppercase tracking-wider text-purple-400 bg-purple-950/80 px-2 py-0.5 rounded-full mt-0.5 border border-purple-800/50">
+              Sample Preview
             </span>
-            <button 
-              onClick={() => setCurrentPage(p => Math.min(numPages || 1, p + 1))}
-              disabled={currentPage === (numPages || 1)}
-              className="flex items-center gap-2 text-sm font-bold text-[#3A20BA] dark:text-[#8720BA] disabled:opacity-30 active:scale-95 transition-transform"
+          )}
+        </div>
+        <div className="w-9 h-9"></div> {/* Spacer for header balance */}
+      </header>
+
+      {/* Main Viewer Container */}
+      <div id="viewer-container">
+        {/* Error state if no URL was provided */}
+        {noUrlError && (
+          <div className="m-auto text-center text-red-400 p-5">
+            <h3 className="text-base font-bold text-red-400">No PDF URL provided</h3>
+            <p className="text-xs mt-2 text-slate-400">Please specify a valid ?file=URL parameter.</p>
+          </div>
+        )}
+
+        {/* PDF Canvas Scroll View Area */}
+        {!useFallback && !noUrlError && (
+          <div id="pdf-scroll-view" ref={scrollViewRef}>
+            {isLoading && (
+              <div id="loading-spinner">
+                <div className="spinner"></div>
+                <p style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Opening Document...</p>
+                <p style={{ fontSize: "11px", color: "#64748b", maxWidth: "260px" }}>
+                  Rendering pages with high-precision vector engine. Fallback viewer will engage if needed.
+                </p>
+              </div>
+            )}
+            <div ref={canvasContainerRef} className="w-full flex flex-col items-center" />
+          </div>
+        )}
+
+        {/* Floating Bottom Toolbar for PDF.js Reader */}
+        {!useFallback && !noUrlError && !isLoading && isPdfLoaded && (
+          <div className="floating-bottom-bar" id="bottom-toolbar">
+            <div className="page-info">
+              <span>Page</span>
+              <input
+                type="number"
+                id="page-num"
+                className="page-input"
+                value={currentPage || 1}
+                min={1}
+                max={numPages || 1}
+                onChange={handlePageInputChange}
+              />
+              <span>
+                / <span id="page-count">{numPages || "-"}</span>
+              </span>
+            </div>
+
+            <div className="h-4 w-[1px] bg-slate-700 mx-0.5" />
+
+            <button
+              className={`reader-btn ${fitToWidth ? "bg-indigo-600/80 text-white border-indigo-500" : ""}`}
+              onClick={handleToggleFitWidth}
+              title="Toggle Fit to Width"
             >
-              Next <ChevronRight className="w-5 h-5" />
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+            <button className="reader-btn" onClick={handleZoomOut} title="Zoom Out">
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <button className="reader-btn" onClick={handleZoomIn} title="Zoom In">
+              <ZoomIn className="w-3.5 h-3.5" />
             </button>
           </div>
-        </div>
-      )}
-    </main>
+        )}
+
+        {/* Fallback Google Docs / Direct Iframe Viewer Container */}
+        {useFallback && !noUrlError && (
+          <div id="fallback-container">
+            <iframe id="fallback-frame" src={fallbackSrc} title="PDF Document Viewer" />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

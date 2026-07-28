@@ -1,16 +1,68 @@
-"use client";
-
+import { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Shield, Mail, MapPin, Globe } from "lucide-react";
+import { ArrowLeft, Shield, Mail, MapPin, Globe, ChevronRight } from "lucide-react";
+import { SITE_URL } from "@/lib/books-server";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy | Exam Kart E-Book Store",
+  description: "Learn how Exam Kart collects, protects, and handles your personal data when purchasing competitive exam e-books.",
+  alternates: {
+    canonical: `${SITE_URL}/privacy-policy`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
 export default function PrivacyPolicyPage() {
+  const jsonLdPrivacy = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Privacy Policy",
+        item: `${SITE_URL}/privacy-policy`,
+      },
+    ],
+  };
+
   return (
-    <main className="min-h-screen pt-4 pb-12 max-w-md mx-auto px-4">
+    <main className="min-h-screen pt-4 pb-12 max-w-md mx-auto px-4 bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdPrivacy) }}
+      />
+
+      {/* Breadcrumbs */}
+      <nav aria-label="Breadcrumb" className="mb-3 text-[11px] text-gray-500 font-medium">
+        <ol className="flex items-center gap-1.5">
+          <li>
+            <Link href="/" className="hover:text-gray-900 transition-colors">
+              Home
+            </Link>
+          </li>
+          <ChevronRight className="w-3 h-3 text-gray-300" />
+          <li className="text-gray-900 font-bold" aria-current="page">
+            Privacy Policy
+          </li>
+        </ol>
+      </nav>
+
       {/* Top Bar */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-5">
         <Link 
           href="/" 
-          className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-700 active:scale-95 transition-transform"
+          className="w-9 h-9 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-100 transition-colors"
+          aria-label="Back to Home"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
@@ -43,9 +95,9 @@ export default function PrivacyPolicyPage() {
             When you visit or purchase digital e-books on <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] underline font-semibold">https://exam-kart.com/</a>, we collect essential information required to deliver services effectively:
           </p>
           <ul className="list-disc pl-4 space-y-1 text-gray-600">
-            <li><strong>Personal Data:</strong> Name, email address, and authentication credentials (when signing in).</li>
+            <li><strong>Personal Data:</strong> Name, email address, and authentication credentials.</li>
             <li><strong>Transaction Records:</strong> History of purchased e-books, order IDs, and payment statuses.</li>
-            <li><strong>Technical & App Data:</strong> Device type, browser preferences, and local reading progress stored on your device.</li>
+            <li><strong>Technical Data:</strong> Device type, browser preferences, and local reading progress.</li>
           </ul>
         </section>
 
@@ -56,7 +108,7 @@ export default function PrivacyPolicyPage() {
             <li>Granting instant, secure access to purchased PDF e-books in your personal digital library.</li>
             <li>Preserving reading markers, notes, and offline download progress within the application.</li>
             <li>Processing orders and delivering customer support for exam material inquiries.</li>
-            <li>Sending essential service updates, receipt confirmations, and referral reward updates.</li>
+            <li>Sending essential service updates and receipt confirmations.</li>
           </ul>
         </section>
 

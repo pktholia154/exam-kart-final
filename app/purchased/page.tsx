@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { signInWithPopup, googleProvider, auth, db, handleFirestoreError, OperationType } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { ProceduralCover } from "@/components/ProceduralCover";
 import { Download, BookOpen, Clock, MoreVertical, FileText } from "lucide-react";
 import Link from "next/link";
@@ -34,6 +34,35 @@ export default function PurchasedPage() {
     };
     if (user) fetchPurchases();
   }, [user]);
+
+  const handleDownloadOffline = async (purchase: any) => {
+    try {
+      let pdfurl = "";
+      const bookKey = purchase.bookId || purchase.seoslug;
+      if (bookKey) {
+        const docRef = doc(db, "books", bookKey);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          pdfurl = docSnap.data().pdfurl;
+        } else {
+          const q = query(collection(db, "books"), where("seoslug", "==", bookKey));
+          const qSnap = await getDocs(q);
+          if (!qSnap.empty) {
+            pdfurl = qSnap.docs[0].data().pdfurl;
+          }
+        }
+      }
+
+      if (pdfurl) {
+        window.open(pdfurl, "_blank");
+      } else {
+        alert("PDF download URL is not available for this book in database.");
+      }
+    } catch (err) {
+      console.error("Error fetching offline PDF link:", err);
+      alert("Failed to retrieve download link from database.");
+    }
+  };
 
   if (authLoading) return null;
 
@@ -114,16 +143,11 @@ export default function PurchasedPage() {
               </div>
               
               <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
-                <Link href={`/read/${purchase.bookId}`} className="flex-1 bg-[#3A20BA] text-white py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <Link href={`/read/${purchase.bookId || purchase.seoslug}?type=full`} className="flex-1 bg-[#3A20BA] text-white py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-transform flex items-center justify-center gap-2">
                   <BookOpen className="w-3.5 h-3.5" /> Read
                 </Link>
                 <button 
-                  onClick={() => {
-                    const link = document.createElement('a');
-                    link.href = 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf';
-                    link.download = `${purchase.title}.pdf`;
-                    link.click();
-                  }}
+                  onClick={() => handleDownloadOffline(purchase)}
                   className="flex-1 bg-[#3A20BA]/5 text-[#3A20BA] py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-transform flex items-center justify-center gap-2 border border-[#3A20BA]/10"
                 >
                   <Download className="w-3.5 h-3.5" /> Offline

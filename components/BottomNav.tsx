@@ -15,6 +15,10 @@ const navItems = [
 export function BottomNav() {
   const pathname = usePathname();
 
+  if (pathname?.startsWith('/read')) {
+    return null;
+  }
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-gray-100 pb-safe">
       <div className="flex items-center justify-around h-16 max-w-md mx-auto w-full px-2">

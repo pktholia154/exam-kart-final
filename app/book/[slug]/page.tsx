@@ -1,278 +1,407 @@
-"use client";
-
-import { use, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
-import { addDoc, collection, query, where, getDocs } from "firebase/firestore";
-import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
-import { ProceduralCover } from "@/components/ProceduralCover";
-import { ArrowLeft, Star, FileText, Globe, Tag, HardDrive, BookOpen, Download, Check } from "lucide-react";
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "next/link";
+import {
+  getBookBySlugServer,
+  getRelatedBooksServer,
+  slugify,
+  SITE_URL,
+} from "@/lib/books-server";
+import { BookActions } from "@/components/BookActions";
+import { ProceduralCover } from "@/components/ProceduralCover";
+import { BookCard } from "@/components/BookCard";
+import {
+  Star,
+  Globe,
+  Tag,
+  HardDrive,
+  BookOpen,
+  Download,
+  ChevronRight,
+  ArrowLeft,
+  Building2,
+  FileCheck2,
+} from "lucide-react";
 
-const defaultBooks = [
-  { id: "1", title: "IBPS Clerk Paper", seoslug: "ibps-clerk-paper", category: "Banking Exams", buyprice: "99", listprice: "199", averageRating: 4.5, reviewCount: 128, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "2", title: "SBI PO Mains 2024", seoslug: "sbi-po-mains-2024", category: "Banking Exams", buyprice: "149", listprice: "249", averageRating: 4.8, reviewCount: 340, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "3", title: "UPSC Prelims CSAT", seoslug: "upsc-prelims-csat", category: "UPSC", buyprice: "199", listprice: "299", averageRating: 4.6, reviewCount: 512, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "4", title: "SSC CGL Tier 1", seoslug: "ssc-cgl-tier-1", category: "SSC", buyprice: "89", listprice: "149", averageRating: 4.3, reviewCount: 204, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "5", title: "RRB NTPC Guide", seoslug: "rrb-ntpc-guide", category: "Railways", buyprice: "129", listprice: "199", averageRating: 4.2, reviewCount: 156, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "6", title: "NDA Mathematics", seoslug: "nda-mathematics", category: "Defense", buyprice: "179", listprice: "249", averageRating: 4.7, reviewCount: 289, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "7", title: "LIC AAO Mock", seoslug: "lic-aao-mock", category: "Insurance", buyprice: "79", listprice: "129", averageRating: 4.4, reviewCount: 92, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." },
-  { id: "8", title: "CTET Paper 1 & 2", seoslug: "ctet-paper-1-2", category: "Teaching", buyprice: "159", listprice: "249", averageRating: 4.5, reviewCount: 410, publsher: "mocktime", seoDescription: "Master exam preparation.", fullDescription: "Comprehensive guide and mock tests." }
-];
+interface BookPageProps {
+  params: Promise<{ slug: string }>;
+}
 
-export default function BookDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
-  const unwrappedParams = use(params);
-  const router = useRouter();
-  const { user } = useAuth();
-  const [book, setBook] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [buying, setBuying] = useState(false);
-  const [hasPurchased, setHasPurchased] = useState(false);
-  const [checkingPurchase, setCheckingPurchase] = useState(false);
-
-  useEffect(() => {
-    const fetchBook = async () => {
-      let slugRaw = unwrappedParams.slug;
-      if (!slugRaw) return;
-      const slug = Array.isArray(slugRaw) ? slugRaw[0] : slugRaw;
-      const decodedSlug = decodeURIComponent(slug);
-      
-      try {
-        const q = query(collection(db, "books"), where("seoslug", "==", decodedSlug));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          setBook({ id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() });
-        } else {
-          // Fallback
-          const fallbackBook = defaultBooks.find(b => b.seoslug === decodedSlug);
-          if (fallbackBook) {
-            setBook(fallbackBook);
-          } else {
-            setBook(null);
-          }
-        }
-      } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, 'books');
-        const fallbackBook = defaultBooks.find(b => b.seoslug === decodedSlug);
-        if (fallbackBook) {
-          setBook(fallbackBook);
-        } else {
-          setBook(null);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBook();
-  }, [unwrappedParams?.slug]);
-
-  useEffect(() => {
-    let active = true;
-    const checkPurchaseStatus = async () => {
-      if (!user || !book?.id) {
-        setHasPurchased(false);
-        return;
-      }
-      setCheckingPurchase(true);
-      try {
-        const q = query(
-          collection(db, "purchases"),
-          where("userId", "==", user.uid),
-          where("bookId", "==", book.id)
-        );
-        const querySnapshot = await getDocs(q);
-        if (active) {
-          setHasPurchased(!querySnapshot.empty);
-        }
-      } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, 'purchases');
-      } finally {
-        if (active) {
-          setCheckingPurchase(false);
-        }
-      }
-    };
-
-    checkPurchaseStatus();
-    return () => {
-      active = false;
-    };
-  }, [user, book?.id, unwrappedParams.slug]);
-
-  const handleBuy = async () => {
-    if (!user) {
-      router.push("/purchased"); // Redirect to sign in (purchased page has sign in)
-      return;
-    }
-    setBuying(true);
-    try {
-      await addDoc(collection(db, "purchases"), {
-        userId: user.uid,
-        bookId: book.id,
-        title: book.title,
-        seoslug: book.seoslug,
-        category: book.category,
-        purchasedAt: new Date().toISOString(),
-      });
-      setHasPurchased(true);
-      router.push("/purchased");
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'purchases');
-    } finally {
-      setBuying(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <main className="min-h-screen max-w-md mx-auto bg-[#F5F5F7] animate-pulse">
-        <div className="h-64 bg-gray-200"></div>
-        <div className="p-4 space-y-4 -mt-6">
-          <div className="bg-white rounded-2xl p-4 h-32"></div>
-          <div className="bg-white rounded-2xl p-4 h-48"></div>
-        </div>
-      </main>
-    );
-  }
+export async function generateMetadata({ params }: BookPageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  const book = await getBookBySlugServer(resolvedParams.slug);
 
   if (!book) {
-    return (
-      <main className="min-h-screen max-w-md mx-auto p-4 flex flex-col items-center justify-center text-center">
-        <h2 className="text-lg font-bold text-gray-900 mb-2">Book Not Found</h2>
-        <button onClick={() => router.back()} className="text-[#3A20BA] font-bold text-sm">Go Back</button>
-      </main>
-    );
+    return {
+      title: "Book Not Found | Exam Kart E-Book Store",
+      description: "The requested competitive exam e-book could not be found.",
+      robots: { index: false, follow: true },
+    };
   }
 
+  const canonicalUrl = `${SITE_URL}/book/${book.seoslug}`;
+  const title = `${book.title} PDF - Solved Paper & Study Guide | Exam Kart`;
+  const description =
+    book.seoDescription ||
+    `Download ${book.title} PDF e-book for ${book.category} prep. Author/Publisher: ${book.publsher}. Buy at ₹${book.buyprice}.`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: "Exam Kart E-Book Store",
+      type: "article",
+      images: [
+        {
+          url: `${SITE_URL}/api/og?title=${encodeURIComponent(
+            book.title
+          )}&category=${encodeURIComponent(book.category)}`,
+          width: 1200,
+          height: 630,
+          alt: book.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+  };
+}
+
+export default async function BookDetailsPage({ params }: BookPageProps) {
+  const resolvedParams = await params;
+  const book = await getBookBySlugServer(resolvedParams.slug);
+
+  if (!book) {
+    notFound();
+  }
+
+  const categorySlug = slugify(book.category);
+  const relatedBooks = await getRelatedBooksServer(book.category, book.seoslug);
+  const canonicalUrl = `${SITE_URL}/book/${book.seoslug}`;
+
+  // Structured Data (JSON-LD)
+  const jsonLdBookAndProduct = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Book",
+        "@id": `${canonicalUrl}#book`,
+        name: book.title,
+        description: book.fullDescription || book.seoDescription,
+        inLanguage: book.language || "English",
+        numberOfPages: book.pageCount,
+        publisher: {
+          "@type": "Organization",
+          name: book.publsher || "Exam Kart Press",
+        },
+        genre: book.category,
+        keywords: book.tags ? book.tags.join(", ") : book.category,
+        url: canonicalUrl,
+      },
+      {
+        "@type": "Product",
+        "@id": `${canonicalUrl}#product`,
+        name: book.title,
+        description: book.seoDescription,
+        category: book.category,
+        brand: {
+          "@type": "Brand",
+          name: "Exam Kart",
+        },
+        offers: {
+          "@type": "Offer",
+          price: book.buyprice,
+          priceCurrency: "INR",
+          availability: "https://schema.org/InStock",
+          url: canonicalUrl,
+          priceValidUntil: "2027-12-31",
+        },
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: book.averageRating || 4.5,
+          reviewCount: book.reviewCount || 50,
+          bestRating: "5",
+          worstRating: "1",
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${canonicalUrl}#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: SITE_URL,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Categories",
+            item: `${SITE_URL}/categories`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: book.category,
+            item: `${SITE_URL}/categories/${categorySlug}`,
+          },
+          {
+            "@type": "ListItem",
+            position: 4,
+            name: book.title,
+            item: canonicalUrl,
+          },
+        ],
+      },
+    ],
+  };
+
   return (
-    <main className="min-h-screen max-w-md mx-auto bg-white pb-24 relative overflow-x-hidden">
-      {/* Top Nav (Sticky & Transparent) */}
-      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-md px-4 py-3 flex items-center justify-between">
-        <button 
-          onClick={() => router.back()}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-gray-900 active:scale-95 transition-transform"
+    <main className="min-h-screen max-w-md mx-auto bg-white pb-20 relative overflow-x-hidden">
+      {/* Inject JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBookAndProduct) }}
+      />
+
+      {/* Top Header & Navigation */}
+      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-2.5 py-2 flex items-center justify-between border-b border-gray-100">
+        <Link
+          href={`/categories/${categorySlug}`}
+          className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-800 hover:bg-gray-100 transition-colors"
+          aria-label="Back to Category"
         >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
+        <span className="text-xs font-bold text-gray-600 truncate max-w-[200px]">
+          {book.category}
+        </span>
+        <Link
+          href="/search"
+          className="text-xs font-bold text-[#3A20BA] hover:underline"
+        >
+          Search
+        </Link>
       </div>
 
-      {/* Hero Section (Side-by-side) */}
-      <div className="px-5 pt-2 pb-8 flex gap-5 items-start">
-        <div className="w-[110px] shrink-0 shadow-lg shadow-[#3A20BA]/10 rounded-lg">
-           <ProceduralCover title={book.title} className="w-full rounded-lg" />
-        </div>
-        
-        <div className="flex-1 min-w-0 pt-1">
-          <p className="text-[10px] font-bold text-[#8720BA] uppercase tracking-wider mb-1">{book.category}</p>
-          <h1 className="text-xl font-black text-gray-900 leading-tight mb-3">{book.title}</h1>
-          
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 mb-3">
-            <Star className="w-4 h-4 text-[#BA8720] fill-current" />
-            <span className="text-sm text-gray-900">{book.averageRating?.toFixed(1)}</span>
-            <span className="text-gray-400">({book.reviewCount} reviews)</span>
-          </div>
-          
-          <div className="text-xs font-medium text-gray-500 mb-3">
-             By <span className="font-bold text-gray-900">{book.publsher || 'Unknown'}</span>
+      {/* Breadcrumb Navigation */}
+      <nav
+        aria-label="Breadcrumb"
+        className="px-2.5 py-2 text-[10px] font-medium text-gray-500 overflow-x-auto no-scrollbar"
+      >
+        <ol className="flex items-center gap-1 whitespace-nowrap">
+          <li>
+            <Link href="/" className="hover:text-gray-900 transition-colors">
+              Home
+            </Link>
+          </li>
+          <ChevronRight className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+          <li>
+            <Link href="/categories" className="hover:text-gray-900 transition-colors">
+              Categories
+            </Link>
+          </li>
+          <ChevronRight className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+          <li>
+            <Link
+              href={`/categories/${categorySlug}`}
+              className="hover:text-[#3A20BA] font-semibold text-gray-700 transition-colors"
+            >
+              {book.category}
+            </Link>
+          </li>
+          <ChevronRight className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+          <li className="text-gray-900 font-bold truncate max-w-[120px]" aria-current="page">
+            {book.title}
+          </li>
+        </ol>
+      </nav>
+
+      {/* Main Article Content */}
+      <article className="px-2.5 space-y-4 pt-1">
+        {/* Book Header Hero */}
+        <div className="flex gap-3 items-start">
+          <div className="w-[100px] shrink-0 rounded overflow-hidden bg-white">
+            <ProceduralCover title={book.title} className="w-full" />
           </div>
 
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-black text-gray-900">₹{book.buyprice}</span>
-            {Number(book.listprice) > Number(book.buyprice) && (
-              <span className="text-[10px] text-gray-400 line-through font-medium">₹{book.listprice}</span>
+          <div className="flex-1 min-w-0">
+            <Link
+              href={`/categories/${categorySlug}`}
+              className="inline-block text-[9px] font-extrabold text-[#8720BA] uppercase tracking-wider mb-0.5 hover:underline"
+            >
+              {book.category}
+            </Link>
+            <h1 className="text-base font-black text-gray-900 leading-snug mb-1.5">
+              {book.title}
+            </h1>
+
+            <div className="flex items-center gap-1 text-xs font-semibold text-gray-700 mb-1.5">
+              <Star className="w-3.5 h-3.5 text-[#BA8720] fill-current" />
+              <span className="text-xs font-bold text-gray-900">
+                {typeof book.averageRating === "number"
+                  ? book.averageRating.toFixed(1)
+                  : book.averageRating || "4.5"}
+              </span>
+              <span className="text-gray-400 text-[10px]">({book.reviewCount || 0} reviews)</span>
+            </div>
+
+            <div className="text-[11px] font-medium text-gray-600 mb-2 flex items-center gap-1">
+              <Building2 className="w-3 h-3 text-gray-400" />
+              Publisher:{" "}
+              <span className="font-bold text-gray-900">
+                {book.publsher || "Exam Kart Press"}
+              </span>
+            </div>
+
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-black text-gray-900">₹{book.buyprice}</span>
+              {Number(book.listprice) > Number(book.buyprice) && (
+                <span className="text-xs text-gray-400 line-through font-medium">
+                  ₹{book.listprice}
+                </span>
+              )}
+              {Number(book.listprice) > Number(book.buyprice) && (
+                <span className="text-[9px] font-bold text-[#53BA20] bg-[#53BA20]/10 px-1 py-0.5 rounded">
+                  {Math.round(
+                    ((Number(book.listprice) - Number(book.buyprice)) /
+                      Number(book.listprice)) *
+                      100
+                  )}
+                  % OFF
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Client Interactive Action Buttons */}
+        <div className="py-1">
+          <BookActions book={book} />
+        </div>
+
+        {/* About Book & Full Description */}
+        <section className="py-1 space-y-2">
+          <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+            <FileCheck2 className="w-3.5 h-3.5 text-[#3A20BA]" /> About this E-Book
+          </h2>
+          <div className="prose prose-xs max-w-none text-xs text-gray-700 leading-relaxed font-normal space-y-2">
+            <p className="font-medium text-gray-800">
+              {book.seoDescription || book.fullDescription}
+            </p>
+            {book.fullDescription && book.fullDescription !== book.seoDescription && (
+              <p className="text-gray-600 whitespace-pre-line leading-relaxed">
+                {book.fullDescription}
+              </p>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Action Buttons */}
-      <div className="px-5 pb-8 flex gap-3">
-        {hasPurchased ? (
-          <>
-            <Link href={`/read/${book.id}`} className="flex-1 bg-white text-[#3A20BA] py-3.5 rounded-2xl text-sm font-bold border border-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
-               <BookOpen className="w-4 h-4" />
-               Read Book
-            </Link>
-            <Link 
-              href={`/read/${book.id}`}
-              className="flex-[1.5] bg-[#53BA20] text-white py-3.5 rounded-2xl text-sm font-bold shadow-md shadow-[#53BA20]/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
+          {/* Tags */}
+          {book.tags && book.tags.length > 0 && (
+            <div className="pt-2">
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
+                Keywords & Topics
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {book.tags.map((tag: string, idx: number) => (
+                  <span
+                    key={idx}
+                    className="flex items-center gap-1 text-[9px] font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full"
+                  >
+                    <Tag className="w-2.5 h-2.5 text-[#3A20BA]" /> {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* E-Book Specifications */}
+        <section className="py-1 space-y-2">
+          <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+            E-Book Specifications
+          </h2>
+
+          <div className="grid grid-cols-2 gap-y-3 gap-x-3 py-1">
+            <div className="flex flex-col gap-0.5">
+              <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                <Globe className="w-3 h-3 text-[#3A20BA]" /> Language
+              </span>
+              <span className="text-xs font-bold text-gray-900">
+                {book.language || "English"}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-0.5">
+              <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                <BookOpen className="w-3 h-3 text-[#3A20BA]" /> Pages
+              </span>
+              <span className="text-xs font-bold text-gray-900">
+                {book.pageCount || "150+"} Pages
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-0.5">
+              <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                <HardDrive className="w-3 h-3 text-[#3A20BA]" /> File Size
+              </span>
+              <span className="text-xs font-bold text-gray-900">
+                {book.fileSizeInMB ? `${book.fileSizeInMB} MB` : "12.5 MB"}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-0.5">
+              <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                <Download className="w-3 h-3 text-[#3A20BA]" /> Format
+              </span>
+              <span className="text-xs font-bold text-gray-900">
+                PDF (Instant Download)
+              </span>
+            </div>
+          </div>
+        </section>
+      </article>
+
+      {/* Crawlable Related Books Section */}
+      {relatedBooks.length > 0 && (
+        <aside className="px-2.5 pt-4 pb-2">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-bold text-gray-900 tracking-tight">
+              Related Books in {book.category}
+            </h2>
+            <Link
+              href={`/categories/${categorySlug}`}
+              className="text-[11px] font-bold text-[#2053BA] hover:underline"
             >
-               <Check className="w-4 h-4" />
-               Purchased!
+              View Category
             </Link>
-          </>
-        ) : (
-          <>
-            <Link href={`/read/${book.id}`} className="flex-1 bg-white text-[#3A20BA] py-3.5 rounded-2xl text-sm font-bold border border-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-2">
-               <FileText className="w-4 h-4" />
-               Sample
-            </Link>
-            <button 
-              onClick={handleBuy}
-              disabled={buying || checkingPurchase}
-              className="flex-[1.5] bg-[#3A20BA] text-white py-3.5 rounded-2xl text-sm font-bold shadow-md shadow-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-70"
-            >
-               {buying ? "Processing..." : "Buy Now"}
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Description */}
-      <div className="px-5 pb-8">
-        <h2 className="text-base font-bold text-gray-900 mb-3">About this book</h2>
-        <p className="text-sm text-gray-600 leading-relaxed font-medium mb-4">
-          {book.fullDescription || book.seoDescription}
-        </p>
-        
-        {/* Tags */}
-        {book.tags && book.tags.length > 0 && (
-           <div className="flex flex-wrap gap-2">
-             {book.tags.map((tag: string, idx: number) => (
-               <span key={idx} className="flex items-center gap-1 text-[10px] font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full">
-                 <Tag className="w-3 h-3" /> {tag}
-               </span>
-             ))}
-           </div>
-        )}
-      </div>
-
-      {/* Specifications */}
-      <div className="px-5 pb-12">
-        <h2 className="text-base font-bold text-gray-900 mb-4">Specifications</h2>
-        
-        <div className="grid grid-cols-2 gap-y-6">
-          <div className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              <Globe className="w-3.5 h-3.5" /> Language
-            </span>
-            <span className="text-sm font-bold text-gray-900">{book.language || 'English'}</span>
-          </div>
-          
-          <div className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              <BookOpen className="w-3.5 h-3.5" /> Pages
-            </span>
-            <span className="text-sm font-bold text-gray-900">{book.pageCount || '-'}</span>
-          </div>
-          
-          <div className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              <HardDrive className="w-3.5 h-3.5" /> Size
-            </span>
-            <span className="text-sm font-bold text-gray-900">{book.fileSizeInMB ? `${book.fileSizeInMB} MB` : '-'}</span>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              <Download className="w-3.5 h-3.5" /> Format
-            </span>
-            <span className="text-sm font-bold text-gray-900">PDF</span>
+          {/* Display in a single row showing 4 book items at a time */}
+          <div className="grid grid-cols-4 gap-1.5">
+            {relatedBooks.slice(0, 4).map((relBook) => (
+              <BookCard key={relBook.id || relBook.seoslug} book={relBook} layout="grid" />
+            ))}
           </div>
-        </div>
-      </div>
+        </aside>
+      )}
     </main>
   );
 }

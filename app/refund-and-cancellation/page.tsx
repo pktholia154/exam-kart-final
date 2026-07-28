@@ -1,22 +1,74 @@
-"use client";
-
+import { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, RefreshCw, Mail, MapPin, Globe, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, RefreshCw, Mail, MapPin, Globe, CheckCircle2, ChevronRight } from "lucide-react";
+import { SITE_URL } from "@/lib/books-server";
+
+export const metadata: Metadata = {
+  title: "Refund & Cancellation Policy | Exam Kart",
+  description: "Read Exam Kart's fair refund and cancellation policy for digital e-book purchases.",
+  alternates: {
+    canonical: `${SITE_URL}/refund-and-cancellation`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
 export default function RefundAndCancellationPage() {
+  const jsonLdRefund = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Refund and Cancellation Policy",
+        item: `${SITE_URL}/refund-and-cancellation`,
+      },
+    ],
+  };
+
   return (
-    <main className="min-h-screen pt-4 pb-12 max-w-md mx-auto px-4">
+    <main className="min-h-screen pt-4 pb-12 max-w-md mx-auto px-4 bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdRefund) }}
+      />
+
+      {/* Breadcrumbs */}
+      <nav aria-label="Breadcrumb" className="mb-3 text-[11px] text-gray-500 font-medium">
+        <ol className="flex items-center gap-1.5">
+          <li>
+            <Link href="/" className="hover:text-gray-900 transition-colors">
+              Home
+            </Link>
+          </li>
+          <ChevronRight className="w-3 h-3 text-gray-300" />
+          <li className="text-gray-900 font-bold" aria-current="page">
+            Refund Policy
+          </li>
+        </ol>
+      </nav>
+
       {/* Top Bar */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-5">
         <Link 
           href="/" 
-          className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-700 active:scale-95 transition-transform"
+          className="w-9 h-9 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-100 transition-colors"
+          aria-label="Back to Home"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Refund Policy</h1>
-          <p className="text-[11px] text-gray-500 font-medium font-sans">Refund & Cancellation Policy</p>
+          <p className="text-[11px] text-gray-500 font-medium">Refund & Cancellation Policy</p>
         </div>
       </div>
 
@@ -40,14 +92,14 @@ export default function RefundAndCancellationPage() {
         <section className="space-y-2">
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">1. Nature of Digital E-Books</h2>
           <p>
-            All products offered on Exam Kart (<a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] underline font-semibold">https://exam-kart.com/</a>) are instant digital PDF downloads and e-books. Once an e-book is purchased, digital access is immediately unlocked and synced to your library.
+            All products offered on Exam Kart (<a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] underline font-semibold">https://exam-kart.com/</a>) are instant digital PDF downloads and e-books. Once purchased, digital access is unlocked immediately.
           </p>
         </section>
 
         <section className="space-y-2">
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">2. Order Cancellation Policy</h2>
           <p>
-            Due to the immediate digital fulfillment nature of digital PDF materials, orders cannot be cancelled once payment is processed and the book has been added to your purchased library.
+            Due to immediate digital fulfillment, orders cannot be cancelled once payment is processed and the e-book has been added to your purchased library.
           </p>
         </section>
 
@@ -84,7 +136,7 @@ export default function RefundAndCancellationPage() {
         <section className="space-y-2">
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">5. Processing Timelines</h2>
           <p>
-            Once approved, refunds are credited back to the original payment method (bank account, UPI, credit/debit card) within <strong>5 to 7 business days</strong>.
+            Once approved, refunds are credited back to the original payment method within <strong>5 to 7 business days</strong>.
           </p>
         </section>
 
