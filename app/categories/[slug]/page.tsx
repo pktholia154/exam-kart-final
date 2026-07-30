@@ -179,7 +179,7 @@ export default async function CategoryDetailPage({ params }: CategoryPageProps) 
                 href={`/categories/${catSlug}`}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all active:scale-95 ${
                   isActive
-                    ? "bg-[#3A20BA] text-white border-transparent shadow-sm"
+                    ? "bg-[#2053BA] text-white border-transparent shadow-sm"
                     : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
                 }`}
               >
@@ -192,7 +192,7 @@ export default async function CategoryDetailPage({ params }: CategoryPageProps) 
         {/* Books List in Category */}
         <section className="space-y-3">
           <h2 className="text-sm font-bold text-gray-900 tracking-tight flex items-center gap-1.5">
-            <BookOpen className="w-4 h-4 text-[#3A20BA]" /> Curated Materials ({books.length})
+            <BookOpen className="w-4 h-4 text-[#2053BA]" /> Curated Materials ({books.length})
           </h2>
 
           {books.length > 0 ? (

@@ -10,6 +10,7 @@ import {
 import { BookActions } from "@/components/BookActions";
 import { ProceduralCover } from "@/components/ProceduralCover";
 import { BookCard } from "@/components/BookCard";
+import { ReviewsSection } from "@/components/ReviewsSection";
 import {
   Star,
   Globe,
@@ -195,7 +196,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
         </span>
         <Link
           href="/search"
-          className="text-xs font-bold text-[#3A20BA] hover:underline"
+          className="text-xs font-bold text-[#2053BA] hover:underline"
         >
           Search
         </Link>
@@ -222,7 +223,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
           <li>
             <Link
               href={`/categories/${categorySlug}`}
-              className="hover:text-[#3A20BA] font-semibold text-gray-700 transition-colors"
+              className="hover:text-[#2053BA] font-semibold text-gray-700 transition-colors"
             >
               {book.category}
             </Link>
@@ -300,7 +301,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
         {/* About Book & Full Description */}
         <section className="py-1 space-y-2">
           <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-            <FileCheck2 className="w-3.5 h-3.5 text-[#3A20BA]" /> About this E-Book
+            <FileCheck2 className="w-3.5 h-3.5 text-[#2053BA]" /> About this E-Book
           </h2>
           <div className="prose prose-xs max-w-none text-xs text-gray-700 leading-relaxed font-normal space-y-2">
             <p className="font-medium text-gray-800">
@@ -325,7 +326,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
                     key={idx}
                     className="flex items-center gap-1 text-[9px] font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full"
                   >
-                    <Tag className="w-2.5 h-2.5 text-[#3A20BA]" /> {tag}
+                    <Tag className="w-2.5 h-2.5 text-[#2053BA]" /> {tag}
                   </span>
                 ))}
               </div>
@@ -342,7 +343,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
           <div className="grid grid-cols-2 gap-y-3 gap-x-3 py-1">
             <div className="flex flex-col gap-0.5">
               <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
-                <Globe className="w-3 h-3 text-[#3A20BA]" /> Language
+                <Globe className="w-3 h-3 text-[#2053BA]" /> Language
               </span>
               <span className="text-xs font-bold text-gray-900">
                 {book.language || "English"}
@@ -351,7 +352,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
 
             <div className="flex flex-col gap-0.5">
               <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
-                <BookOpen className="w-3 h-3 text-[#3A20BA]" /> Pages
+                <BookOpen className="w-3 h-3 text-[#2053BA]" /> Pages
               </span>
               <span className="text-xs font-bold text-gray-900">
                 {book.pageCount || "150+"} Pages
@@ -360,7 +361,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
 
             <div className="flex flex-col gap-0.5">
               <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
-                <HardDrive className="w-3 h-3 text-[#3A20BA]" /> File Size
+                <HardDrive className="w-3 h-3 text-[#2053BA]" /> File Size
               </span>
               <span className="text-xs font-bold text-gray-900">
                 {book.fileSizeInMB ? `${book.fileSizeInMB} MB` : "12.5 MB"}
@@ -369,7 +370,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
 
             <div className="flex flex-col gap-0.5">
               <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
-                <Download className="w-3 h-3 text-[#3A20BA]" /> Format
+                <Download className="w-3 h-3 text-[#2053BA]" /> Format
               </span>
               <span className="text-xs font-bold text-gray-900">
                 PDF (Instant Download)
@@ -377,6 +378,9 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
             </div>
           </div>
         </section>
+
+        {/* Ratings & Reviews Section */}
+        <ReviewsSection bookId={book.id} />
       </article>
 
       {/* Crawlable Related Books Section */}

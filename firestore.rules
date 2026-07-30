@@ -62,6 +62,18 @@ service cloud.firestore {
              (!data.keys().hasAny(['orderId']) || (data.orderId is string && data.orderId.size() <= 128)) &&
              (!data.keys().hasAny(['paymentId']) || (data.paymentId is string && data.paymentId.size() <= 128));
     }
+
+    function isValidReview(data) {
+      return data.keys().hasAll(['bookId', 'userId', 'userName', 'rating', 'comment', 'createdAt', 'updatedAt']) &&
+             data.keys().size() == 7 &&
+             data.bookId is string && data.bookId.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+             data.userName is string && data.userName.size() <= 100 &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() <= 2000 &&
+             data.createdAt is string && data.createdAt.size() <= 100 &&
+             data.updatedAt is string && data.updatedAt.size() <= 100;
+    }
     
     match /categories/{categoryId} {
       allow get: if isValidId(categoryId);
@@ -75,8 +87,8 @@ service cloud.firestore {
       allow get: if isValidId(bookId);
       allow list: if true;
       allow create: if isSignedIn() && isValidId(bookId) && isValidBook(incoming());
+      allow update: if isSignedIn() && isValidId(bookId) && isValidBook(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['averageRating', 'reviewCount']);
       allow delete: if isSignedIn();
-      // No updates allowed for now
     }
     
     match /purchases/{purchaseId} {
@@ -84,6 +96,14 @@ service cloud.firestore {
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && isValidId(purchaseId) && isValidPurchase(incoming());
       // No updates or deletes allowed for now
+    }
+    
+    match /reviews/{reviewId} {
+      allow get: if isValidId(reviewId);
+      allow list: if true;
+      allow create: if isSignedIn() && isValidId(reviewId) && isValidReview(incoming());
+      allow update: if isSignedIn() && isValidId(reviewId) && isValidReview(incoming()) && existing().userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'comment', 'updatedAt']);
+      allow delete: if isSignedIn() && isValidId(reviewId) && existing().userId == request.auth.uid;
     }
   }
 }

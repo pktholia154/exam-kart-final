@@ -102,7 +102,7 @@ export default function AdminSEODashboard() {
 
       <div className="space-y-6">
         {/* Quick Info Banner */}
-        <div className="bg-gradient-to-r from-[#3A20BA] to-[#2053BA] text-white p-4 rounded-2xl shadow-md space-y-1">
+        <div className="bg-gradient-to-r from-[#2053BA] to-[#2053BA] text-white p-4 rounded-2xl shadow-md space-y-1">
           <div className="flex items-center gap-2 text-xs font-bold">
             <Sparkles className="w-4 h-4 text-amber-300" /> Automated SEO & Cache Purge Pipeline
           </div>
@@ -114,7 +114,7 @@ export default function AdminSEODashboard() {
         {/* Section 1: Automated Book Publisher & Validator */}
         <section className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-4">
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-            <Send className="w-4 h-4 text-[#3A20BA]" /> Validate & Publish Book
+            <Send className="w-4 h-4 text-[#2053BA]" /> Validate & Publish Book
           </h2>
 
           <form onSubmit={handlePublishSubmit} className="space-y-3">
@@ -127,7 +127,7 @@ export default function AdminSEODashboard() {
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#3A20BA]"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#2053BA]"
               />
               <span className="text-[10px] text-gray-400 font-mono">
                 Chars: {formData.title.length} / 100
@@ -144,7 +144,7 @@ export default function AdminSEODashboard() {
                   value={formData.seoslug}
                   onChange={(e) => setFormData({ ...formData, seoslug: e.target.value })}
                   placeholder="e.g. sbi-po-mains-2026"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#3A20BA]"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#2053BA]"
                 />
               </div>
 
@@ -157,7 +157,7 @@ export default function AdminSEODashboard() {
                   required
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#3A20BA]"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#2053BA]"
                 />
               </div>
             </div>
@@ -171,7 +171,7 @@ export default function AdminSEODashboard() {
                 rows={2}
                 value={formData.seoDescription}
                 onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#3A20BA] resize-none"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#2053BA] resize-none"
               />
               <span className="text-[10px] text-gray-400 font-mono">
                 Chars: {formData.seoDescription.length} / 300
@@ -188,7 +188,7 @@ export default function AdminSEODashboard() {
                   required
                   value={formData.buyprice}
                   onChange={(e) => setFormData({ ...formData, buyprice: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#3A20BA]"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#2053BA]"
                 />
               </div>
 
@@ -200,7 +200,7 @@ export default function AdminSEODashboard() {
                   type="number"
                   value={formData.listprice}
                   onChange={(e) => setFormData({ ...formData, listprice: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#3A20BA]"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#2053BA]"
                 />
               </div>
             </div>
@@ -213,14 +213,14 @@ export default function AdminSEODashboard() {
                 type="text"
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#3A20BA]"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#2053BA]"
               />
             </div>
 
             <button
               type="submit"
               disabled={publishing}
-              className="w-full py-3 bg-[#3A20BA] text-white rounded-xl text-xs font-bold active:scale-[0.98] transition-transform flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+              className="w-full py-3 bg-[#2053BA] text-white rounded-xl text-xs font-bold active:scale-[0.98] transition-transform flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
             >
               {publishing ? "Validating & Publishing..." : "Publish & Purge Cache"}
             </button>
@@ -255,7 +255,7 @@ export default function AdminSEODashboard() {
                       href={publishResult.publishedUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[#3A20BA] font-bold underline"
+                      className="text-[#2053BA] font-bold underline"
                     >
                       {publishResult.publishedUrl}
                     </a>
@@ -334,7 +334,7 @@ export default function AdminSEODashboard() {
                 href="/sitemap.xml"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[#3A20BA] font-bold underline"
+                className="text-[#2053BA] font-bold underline"
               >
                 /sitemap.xml
               </a>
@@ -346,7 +346,7 @@ export default function AdminSEODashboard() {
                 href="/sitemap-index.xml"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[#3A20BA] font-bold underline"
+                className="text-[#2053BA] font-bold underline"
               >
                 /sitemap-index.xml
               </a>
@@ -358,7 +358,7 @@ export default function AdminSEODashboard() {
                 href="/robots.txt"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[#3A20BA] font-bold underline"
+                className="text-[#2053BA] font-bold underline"
               >
                 /robots.txt
               </a>

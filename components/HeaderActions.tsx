@@ -64,7 +64,7 @@ export function HeaderActions() {
         <button
           onClick={handleInstallClick}
           disabled={isInstalling}
-          className="flex items-center gap-1 bg-[#3A20BA] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm active:scale-95 transition-transform disabled:opacity-70 disabled:active:scale-100"
+          className="flex items-center gap-1 bg-[#2053BA] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm active:scale-95 transition-transform disabled:opacity-70 disabled:active:scale-100"
         >
           {isInstalling ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />

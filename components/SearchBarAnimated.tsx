@@ -28,7 +28,7 @@ export function SearchBarAnimated() {
           ease: "easeInOut" 
         }}
       >
-        <Search className="absolute left-3.5 w-4 h-4 text-[#3A20BA] opacity-70" />
+        <Search className="absolute left-3.5 w-4 h-4 text-[#2053BA] opacity-70" />
         <span className="text-gray-600">Search books, exams, authors...</span>
       </motion.div>
     </Link>

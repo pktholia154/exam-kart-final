@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
+import { useParams, useSearchParams } from "next/navigation";
+import { Maximize2, ZoomIn, ZoomOut } from "lucide-react";
 import { fetchFirestoreBookBySlugOrId } from "@/lib/books-store";
 
 export default function PDFReader() {
-  const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
 
@@ -114,7 +113,7 @@ export default function PDFReader() {
     }
   }, []);
 
-  // Render a single page canvas with exact proportional scaling
+  // Render a single page canvas with exact proportional scaling and high-DPI sharpness
   const renderPage = useCallback(async (num: number, canvas: HTMLCanvasElement, wrapper: HTMLDivElement) => {
     const doc = pdfDocRef.current;
     if (!doc) return;
@@ -144,8 +143,8 @@ export default function PDFReader() {
 
       const viewport = page.getViewport({ scale: renderScale });
 
-      // High-DPI (Retina) scaling for crystal clear rendering
-      const dpr = Math.max(window.devicePixelRatio || 1, 2);
+      // High-DPI (Retina/Mobile) super-sampling for crystal clear ultra-sharp text
+      const dpr = Math.max(window.devicePixelRatio || 1, 2.5);
 
       const pixelWidth = Math.floor(viewport.width * dpr);
       const pixelHeight = Math.floor(viewport.height * dpr);
@@ -155,7 +154,7 @@ export default function PDFReader() {
 
       // Instant CSS update for this specific page
       canvas.style.width = `${aspectWidth}px`;
-      canvas.style.maxWidth = "100%";
+      canvas.style.maxWidth = "none";
       canvas.style.height = "auto";
       canvas.style.aspectRatio = `${aspectWidth} / ${aspectHeight}`;
 
@@ -175,6 +174,9 @@ export default function PDFReader() {
       tempCanvas.height = pixelHeight;
       const tempCtx = tempCanvas.getContext("2d", { alpha: false });
       if (!tempCtx) return;
+
+      tempCtx.imageSmoothingEnabled = true;
+      tempCtx.imageSmoothingQuality = "high";
 
       tempCtx.save();
       tempCtx.scale(dpr, dpr);
@@ -200,6 +202,8 @@ export default function PDFReader() {
       canvas.height = pixelHeight;
       const ctx = canvas.getContext("2d", { alpha: false });
       if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
         ctx.drawImage(tempCanvas, 0, 0);
       }
       canvas.setAttribute("data-render-key", scaleKey);
@@ -291,7 +295,6 @@ export default function PDFReader() {
       canvas.setAttribute("data-page-num", i.toString());
       if (initialAspectWidth > 0) {
         canvas.style.width = `${initialAspectWidth}px`;
-        canvas.style.maxWidth = "100%";
         canvas.style.aspectRatio = sampleAspect;
       }
 
@@ -313,7 +316,7 @@ export default function PDFReader() {
 
     try {
       const page1 = await doc.getPage(1);
-      
+
       let renderScale = scaleRef.current;
       const container = scrollViewRef.current;
       const availableWidth = container ? Math.max(container.clientWidth - 24, 280) : window.innerWidth - 24;
@@ -329,7 +332,7 @@ export default function PDFReader() {
       const aspectHeight = Math.floor(viewport1.height);
       const sampleAspect = `${aspectWidth} / ${aspectHeight}`;
 
-      // 1. Immediately update CSS on all wrappers and canvases for instant zoom
+      // 1. Immediately update CSS on all wrappers and canvases for instant response
       pageWrappersRef.current.forEach((wrapper) => {
         if (wrapper) {
           wrapper.style.maxWidth = `${aspectWidth}px`;
@@ -340,17 +343,30 @@ export default function PDFReader() {
       pageCanvasesRef.current.forEach((canvas) => {
         if (canvas) {
           canvas.style.width = `${aspectWidth}px`;
-          canvas.style.maxWidth = "100%";
-          canvas.style.height = "auto";
           canvas.style.aspectRatio = sampleAspect;
         }
       });
 
-      // 2. Reset render states to allow re-rendering at the new resolution
+      // 2. Reset render states to force vector clarity at new scale
       pageRenderStatesRef.current.fill(false);
 
-      // 3. Re-trigger observer for visible elements
-      if (renderObserverRef.current && scrollViewRef.current) {
+      // 3. Immediately re-render currently visible pages
+      pageWrappersRef.current.forEach((wrapper, index) => {
+        if (wrapper) {
+          const rect = wrapper.getBoundingClientRect();
+          if (rect.top < window.innerHeight + 800 && rect.bottom > -800) {
+            const pageNum = index + 1;
+            const canvasEl = pageCanvasesRef.current[index];
+            if (canvasEl) {
+              pageRenderStatesRef.current[pageNum] = true;
+              renderPage(pageNum, canvasEl, wrapper);
+            }
+          }
+        }
+      });
+
+      // 4. Re-observe remaining pages
+      if (renderObserverRef.current) {
         renderObserverRef.current.disconnect();
         requestAnimationFrame(() => {
           if (renderObserverRef.current) {
@@ -363,12 +379,106 @@ export default function PDFReader() {
     } catch (e) {
       console.warn("Error applying zoom:", e);
     }
-  }, []);
+  }, [renderPage]);
 
-  // Re-render all pages
+  // Re-render all pages on zoom change
   const reRenderAll = useCallback(() => {
     applyZoom();
   }, [applyZoom]);
+
+  // Touch Pinch-to-Zoom Gesture Handler for Mobile Devices (Chrome PDFium feel)
+  useEffect(() => {
+    const container = scrollViewRef.current;
+    if (!container) return;
+
+    let initialDist = 0;
+    let startScale = scaleRef.current;
+    let isPinching = false;
+    let currentFactor = 1;
+
+    const getDistance = (touches: TouchList) => {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.hypot(dx, dy);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        isPinching = true;
+        initialDist = getDistance(e.touches);
+        startScale = scaleRef.current;
+        currentFactor = 1;
+        setFitToWidth(false);
+        fitToWidthRef.current = false;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isPinching && e.touches.length === 2) {
+        e.preventDefault();
+        const dist = getDistance(e.touches);
+        if (initialDist > 0) {
+          currentFactor = dist / initialDist;
+          const targetScale = Math.min(Math.max(startScale * currentFactor, 0.6), 4.0);
+
+          // Instant 60fps CSS transform feedback during pinch gesture
+          if (canvasContainerRef.current) {
+            const relativeFactor = targetScale / scaleRef.current;
+            canvasContainerRef.current.style.transform = `scale(${relativeFactor})`;
+            canvasContainerRef.current.style.transformOrigin = "center top";
+            canvasContainerRef.current.style.transition = "none";
+          }
+        }
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (isPinching && e.touches.length < 2) {
+        isPinching = false;
+        if (canvasContainerRef.current) {
+          canvasContainerRef.current.style.transform = "";
+          canvasContainerRef.current.style.transformOrigin = "";
+          canvasContainerRef.current.style.transition = "";
+        }
+
+        const finalScale = Math.min(Math.max(+(startScale * currentFactor).toFixed(2), 0.6), 4.0);
+        setScale(finalScale);
+        scaleRef.current = finalScale;
+        reRenderAll();
+      }
+    };
+
+    // Desktop trackpad / Ctrl + Wheel Pinch Zoom
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        setFitToWidth(false);
+        fitToWidthRef.current = false;
+        const delta = e.deltaY < 0 ? 0.2 : -0.2;
+        setScale((prev) => {
+          const next = Math.min(Math.max(+(prev + delta).toFixed(2), 0.6), 4.0);
+          scaleRef.current = next;
+          setTimeout(reRenderAll, 0);
+          return next;
+        });
+      }
+    };
+
+    container.addEventListener("touchstart", handleTouchStart, { passive: false });
+    container.addEventListener("touchmove", handleTouchMove, { passive: false });
+    container.addEventListener("touchend", handleTouchEnd);
+    container.addEventListener("touchcancel", handleTouchEnd);
+    container.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+      container.removeEventListener("touchcancel", handleTouchEnd);
+      container.removeEventListener("wheel", handleWheel);
+    };
+  }, [reRenderAll]);
 
   // Handle window resize to adjust fit-to-width mode
   useEffect(() => {
@@ -517,6 +627,7 @@ export default function PDFReader() {
   // Zoom In
   const handleZoomIn = () => {
     setFitToWidth(false);
+    fitToWidthRef.current = false;
     setScale((prev) => {
       const next = +(prev + 0.25).toFixed(2);
       scaleRef.current = next;
@@ -528,8 +639,9 @@ export default function PDFReader() {
   // Zoom Out
   const handleZoomOut = () => {
     setFitToWidth(false);
+    fitToWidthRef.current = false;
     setScale((prev) => {
-      if (prev <= 0.4) return prev;
+      if (prev <= 0.5) return prev;
       const next = +(prev - 0.25).toFixed(2);
       scaleRef.current = next;
       setTimeout(reRenderAll, 0);
@@ -552,29 +664,9 @@ export default function PDFReader() {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] w-screen h-screen bg-slate-900 text-slate-100 flex flex-col overflow-hidden select-none">
-      {/* Top Header Bar */}
-      <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md px-4 py-2.5 flex items-center justify-between border-b border-slate-800 shadow-sm">
-        <button
-          onClick={() => router.back()}
-          className="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-colors active:scale-95"
-          title="Go Back"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex flex-col items-center max-w-[240px] px-2 text-center">
-          <span className="text-xs font-bold text-slate-100 truncate w-full">{bookTitle}</span>
-          {readType === "sample" && (
-            <span className="text-[9px] font-black uppercase tracking-wider text-purple-400 bg-purple-950/80 px-2 py-0.5 rounded-full mt-0.5 border border-purple-800/50">
-              Sample Preview
-            </span>
-          )}
-        </div>
-        <div className="w-9 h-9"></div> {/* Spacer for header balance */}
-      </header>
-
-      {/* Main Viewer Container */}
-      <div id="viewer-container">
+    <div className="fixed inset-0 z-[100] w-screen h-screen bg-slate-950 text-slate-100 flex flex-col overflow-hidden select-none">
+      {/* Main Full Page Viewer Container */}
+      <div id="viewer-container" className="relative w-full h-full flex-1 overflow-hidden bg-slate-950">
         {/* Error state if no URL was provided */}
         {noUrlError && (
           <div className="m-auto text-center text-red-400 p-5">
@@ -589,13 +681,13 @@ export default function PDFReader() {
             {isLoading && (
               <div id="loading-spinner">
                 <div className="spinner"></div>
-                <p style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>Opening Document...</p>
-                <p style={{ fontSize: "11px", color: "#64748b", maxWidth: "260px" }}>
-                  Rendering pages with high-precision vector engine. Fallback viewer will engage if needed.
+                <p style={{ fontSize: "13px", fontWeight: 600, color: "#cbd5e1" }}>Opening Document...</p>
+                <p style={{ fontSize: "11px", color: "#94a3b8", maxWidth: "260px" }}>
+                  Rendering pages with high-precision vector engine.
                 </p>
               </div>
             )}
-            <div ref={canvasContainerRef} className="w-full flex flex-col items-center" />
+            <div ref={canvasContainerRef} className="w-full flex flex-col items-center origin-top transition-transform duration-75" />
           </div>
         )}
 
@@ -621,17 +713,17 @@ export default function PDFReader() {
             <div className="h-4 w-[1px] bg-slate-700 mx-0.5" />
 
             <button
-              className={`reader-btn ${fitToWidth ? "bg-indigo-600/80 text-white border-indigo-500" : ""}`}
+              className={`reader-btn ${fitToWidth ? "bg-[#2053BA]/80 text-white border-[#2053BA]" : ""}`}
               onClick={handleToggleFitWidth}
               title="Toggle Fit to Width"
             >
-              <Maximize2 className="w-3.5 h-3.5" />
+              <Maximize2 className="w-4 h-4" />
             </button>
             <button className="reader-btn" onClick={handleZoomOut} title="Zoom Out">
-              <ZoomOut className="w-3.5 h-3.5" />
+              <ZoomOut className="w-4 h-4" />
             </button>
             <button className="reader-btn" onClick={handleZoomIn} title="Zoom In">
-              <ZoomIn className="w-3.5 h-3.5" />
+              <ZoomIn className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -646,3 +738,4 @@ export default function PDFReader() {
     </div>
   );
 }
+

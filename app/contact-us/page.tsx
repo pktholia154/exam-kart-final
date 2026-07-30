@@ -74,7 +74,7 @@ export default function ContactUsPage() {
       </div>
 
       {/* Hero Badge */}
-      <div className="bg-gradient-to-br from-[#3A20BA] to-[#2053BA] rounded-3xl p-5 text-white shadow-md mb-6 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#2053BA] to-[#2053BA] rounded-3xl p-5 text-white shadow-md mb-6 relative overflow-hidden">
         <div className="relative z-10 flex items-start gap-3">
           <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
             <Mail className="w-5 h-5 text-white" />

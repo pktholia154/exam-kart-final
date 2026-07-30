@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 const PDFReader = dynamic(() => import('@/components/PDFReader'), {
   ssr: false,
   loading: () => (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-[#3A20BA]">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-[#2053BA]">
       <Loader2 className="w-8 h-8 animate-spin mb-4" />
       <span className="text-sm font-bold">Initializing Reader...</span>
     </div>

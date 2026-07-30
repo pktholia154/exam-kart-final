@@ -73,7 +73,7 @@ export default function TermsAndConditionsPage() {
       </div>
 
       {/* Hero Badge */}
-      <div className="bg-gradient-to-br from-[#3A20BA] to-[#2053BA] rounded-3xl p-5 text-white shadow-md mb-6 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#2053BA] to-[#2053BA] rounded-3xl p-5 text-white shadow-md mb-6 relative overflow-hidden">
         <div className="relative z-10 flex items-start gap-3">
           <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
             <FileText className="w-5 h-5 text-white" />
@@ -92,7 +92,7 @@ export default function TermsAndConditionsPage() {
         <section className="space-y-2">
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">1. Agreement to Terms</h2>
           <p>
-            By accessing <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] underline font-semibold">https://exam-kart.com/</a> or using our web application provided by brand <strong>Exam Kart</strong> (Legal Name: <strong>Pardeep Kumar</strong>), you agree to be bound by these Terms and Conditions.
+            By accessing <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#2053BA] underline font-semibold">https://exam-kart.com/</a> or using our web application provided by brand <strong>Exam Kart</strong> (Legal Name: <strong>Pardeep Kumar</strong>), you agree to be bound by these Terms and Conditions.
           </p>
         </section>
 
@@ -146,16 +146,16 @@ export default function TermsAndConditionsPage() {
               <span><strong>Brand Name:</strong> Exam Kart</span>
             </div>
             <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-[#3A20BA] shrink-0" />
-              <span>Email: <a href="mailto:support@exam-kart.com" className="text-[#3A20BA] font-bold underline">support@exam-kart.com</a></span>
+              <Mail className="w-4 h-4 text-[#2053BA] shrink-0" />
+              <span>Email: <a href="mailto:support@exam-kart.com" className="text-[#2053BA] font-bold underline">support@exam-kart.com</a></span>
             </div>
             <div className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 text-[#3A20BA] shrink-0 mt-0.5" />
+              <MapPin className="w-4 h-4 text-[#2053BA] shrink-0 mt-0.5" />
               <span>Address: 1st Floor, SCO-28, Sector 13, Bhiwani, Haryana 127021</span>
             </div>
             <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-[#3A20BA] shrink-0" />
-              <span>Web: <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] font-bold underline">https://exam-kart.com/</a></span>
+              <Globe className="w-4 h-4 text-[#2053BA] shrink-0" />
+              <span>Web: <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#2053BA] font-bold underline">https://exam-kart.com/</a></span>
             </div>
           </div>
         </section>

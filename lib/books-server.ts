@@ -66,6 +66,9 @@ export function slugify(text: string): string {
  * Wrapped with React cache() to deduplicate requests across single request lifetime.
  */
 export const getBooksServer = cache(async (): Promise<Book[]> => {
+  if (process.env.npm_lifecycle_event === 'build') {
+    return DEFAULT_BOOKS;
+  }
   try {
     const snap = await getDocs(collection(db, "books"));
     if (!snap.empty) {
@@ -83,6 +86,9 @@ export const getBooksServer = cache(async (): Promise<Book[]> => {
  * Wrapped with React cache().
  */
 export const getCategoriesServer = cache(async (): Promise<Category[]> => {
+  if (process.env.npm_lifecycle_event === 'build') {
+    return DEFAULT_CATEGORIES;
+  }
   try {
     const snap = await getDocs(collection(db, "categories"));
     if (!snap.empty) {
@@ -106,6 +112,12 @@ export const getCategoriesServer = cache(async (): Promise<Category[]> => {
  */
 export const getBookBySlugServer = cache(async (slugOrId: string): Promise<Book | null> => {
   const decoded = decodeURIComponent(slugOrId).toLowerCase();
+  
+  if (process.env.npm_lifecycle_event === 'build') {
+    return DEFAULT_BOOKS.find(
+      (b) => b.seoslug.toLowerCase() === decoded || b.id === decoded
+    ) || null;
+  }
 
   try {
     // 1. Try direct doc ID

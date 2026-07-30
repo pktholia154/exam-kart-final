@@ -28,6 +28,17 @@ export interface Category {
   seoslug: string;
 }
 
+export interface Review {
+  id: string;
+  bookId: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * Robustly parse Firestore book document supporting all URL field variations
  */
@@ -306,5 +317,17 @@ async function verifyBookInFirestore(slugOrId: string, knownId?: string): Promis
   } catch (err) {
     handleFirestoreError(err, OperationType.GET, "books");
     return null;
+  }
+}
+
+export async function fetchReviewsForBook(bookId: string): Promise<Review[]> {
+  try {
+    const q = query(collection(db, "reviews"), where("bookId", "==", bookId));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Review, "id">) }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (err) {
+    handleFirestoreError(err, OperationType.LIST, "reviews");
+    return [];
   }
 }

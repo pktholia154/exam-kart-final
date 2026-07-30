@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { useCart } from "@/lib/cart-context";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType, signInWithPopup, googleProvider, auth } from "@/lib/firebase";
-import { BookOpen, Check, ShieldAlert, Loader2, CreditCard, Share2, CheckCheck } from "lucide-react";
+import { BookOpen, Check, ShieldAlert, Loader2, CreditCard, Share2, CheckCheck, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { Book } from "@/lib/books-store";
 
@@ -22,6 +23,7 @@ declare global {
 export function BookActions({ book }: BookActionsProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { addToCart, items } = useCart();
   const [buying, setBuying] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [checkingPurchase, setCheckingPurchase] = useState(false);
@@ -29,6 +31,7 @@ export function BookActions({ book }: BookActionsProps) {
   const [copied, setCopied] = useState(false);
 
   const bookIdOrSlug = book.id || book.seoslug;
+  const inCart = items.some(item => (item.book.id || item.book.seoslug) === bookIdOrSlug);
 
   useEffect(() => {
     let active = true;
@@ -230,7 +233,7 @@ export function BookActions({ book }: BookActionsProps) {
           email: currentUser.email || "",
         },
         theme: {
-          color: "#3A20BA",
+          color: "#2053BA",
         },
         modal: {
           ondismiss: function () {
@@ -291,7 +294,7 @@ export function BookActions({ book }: BookActionsProps) {
               href={`/read/${bookIdOrSlug}?type=full&url=${encodeURIComponent(
                 book.pdfurl || book.sampleurl || ""
               )}`}
-              className="flex-[1.5] bg-[#3A20BA] text-white py-2.5 px-2 rounded-xl text-xs font-bold shadow-md shadow-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+              className="flex-[1.5] bg-[#2053BA] text-white py-2.5 px-2 rounded-xl text-xs font-bold shadow-md shadow-[#2053BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
             >
               <Check className="w-3.5 h-3.5" />
               Purchased
@@ -311,7 +314,7 @@ export function BookActions({ book }: BookActionsProps) {
             <button
               onClick={handleBuy}
               disabled={buying || checkingPurchase}
-              className="flex-[1.5] w-full bg-[#3A20BA] hover:bg-[#301a9c] text-white py-2.5 px-2 rounded-xl text-xs font-bold shadow-md shadow-[#3A20BA]/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-70 cursor-pointer"
+              className="flex-[1.5] w-full bg-[#2053BA] hover:bg-[#301a9c] text-white py-2.5 px-2 rounded-xl text-xs font-bold shadow-md shadow-[#2053BA]/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-70 cursor-pointer"
             >
               {buying ? (
                 <>
@@ -329,10 +332,30 @@ export function BookActions({ book }: BookActionsProps) {
         )}
       </div>
 
+      {!hasPurchased && (
+        <button
+          onClick={() => addToCart(book)}
+          disabled={inCart || checkingPurchase}
+          className="w-full bg-orange-100 hover:bg-orange-200 text-orange-700 py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm disabled:opacity-50"
+        >
+          {inCart ? (
+            <>
+              <Check className="w-4 h-4" />
+              <span>Added to Cart</span>
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="w-4 h-4" />
+              <span>Add to Cart</span>
+            </>
+          )}
+        </button>
+      )}
+
       {/* Prominent Share Button */}
       <button
         onClick={handleShare}
-        className="w-full bg-[#3A20BA]/10 hover:bg-[#3A20BA]/15 text-[#3A20BA] py-2.5 px-4 rounded-xl text-xs font-extrabold border border-[#3A20BA]/25 flex items-center justify-center gap-2 active:scale-95 transition-all shadow-2xs"
+        className="w-full bg-[#2053BA]/10 hover:bg-[#2053BA]/15 text-[#2053BA] py-2.5 px-4 rounded-xl text-xs font-extrabold border border-[#2053BA]/25 flex items-center justify-center gap-2 active:scale-95 transition-all shadow-2xs"
       >
         {copied ? (
           <>
@@ -341,7 +364,7 @@ export function BookActions({ book }: BookActionsProps) {
           </>
         ) : (
           <>
-            <Share2 className="w-4 h-4 text-[#3A20BA]" />
+            <Share2 className="w-4 h-4 text-[#2053BA]" />
             <span>Share E-Book</span>
           </>
         )}

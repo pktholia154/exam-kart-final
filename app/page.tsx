@@ -103,7 +103,7 @@ export default async function Home() {
       {/* Header / Search bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-2.5 pt-3 pb-2 border-b border-gray-100/80">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-extrabold text-[#3A20BA] tracking-tight">ExamKart</h1>
+          <h1 className="text-xl font-extrabold text-[#2053BA] tracking-tight">ExamKart</h1>
           <HeaderActions />
         </div>
         <SearchBarAnimated />
@@ -111,7 +111,7 @@ export default async function Home() {
 
       <div className="px-2.5 space-y-5 mt-2.5">
         {/* Banner - Vertical height decreased by 20% */}
-        <section className="bg-gradient-to-br from-[#3A20BA] via-[#2D2FB8] to-[#2053BA] rounded-2xl py-3.5 px-4 text-white shadow-md shadow-[#3A20BA]/15 relative overflow-hidden">
+        <section className="bg-gradient-to-br from-[#2053BA] via-[#2053BA] to-[#2053BA] rounded-2xl py-3.5 px-4 text-white shadow-md shadow-[#2053BA]/15 relative overflow-hidden">
           <div className="relative z-10 w-2/3">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-md text-[9px] font-extrabold uppercase tracking-wider mb-1">
               <Sparkles className="w-2.5 h-2.5 text-amber-300 fill-amber-300" /> Deal of the Day
@@ -122,7 +122,7 @@ export default async function Home() {
             </p>
             <Link
               href="/book/upsc-prelims-csat"
-              className="inline-block bg-white text-[#3A20BA] px-3.5 py-1.5 rounded-full text-[11px] font-extrabold active:scale-95 transition-transform shadow-sm"
+              className="inline-block bg-white text-[#2053BA] px-3.5 py-1.5 rounded-full text-[11px] font-extrabold active:scale-95 transition-transform shadow-sm"
             >
               Get Now at ₹199
             </Link>
@@ -178,7 +178,7 @@ export default async function Home() {
                 <Link
                   key={cat.id || idx}
                   href={`/categories/${catSlug}`}
-                  className="px-3.5 py-1.5 bg-white border border-gray-200/90 rounded-full text-xs font-semibold text-gray-700 active:bg-gray-50 hover:border-[#3A20BA]/30 hover:text-[#3A20BA] transition-colors shadow-2xs"
+                  className="px-3.5 py-1.5 bg-white border border-gray-200/90 rounded-full text-xs font-semibold text-gray-700 active:bg-gray-50 hover:border-[#2053BA]/30 hover:text-[#2053BA] transition-colors shadow-2xs"
                 >
                   {cat.name}
                 </Link>
@@ -186,7 +186,7 @@ export default async function Home() {
             })}
             <Link
               href="/categories"
-              className="px-3 py-1.5 bg-[#3A20BA]/5 border border-[#3A20BA]/20 rounded-full text-xs font-bold text-[#3A20BA] flex items-center gap-1 hover:bg-[#3A20BA]/10 transition-colors"
+              className="px-3 py-1.5 bg-[#2053BA]/5 border border-[#2053BA]/20 rounded-full text-xs font-bold text-[#2053BA] flex items-center gap-1 hover:bg-[#2053BA]/10 transition-colors"
             >
               Explore All <ChevronRight className="w-3 h-3" />
             </Link>
@@ -225,7 +225,7 @@ export default async function Home() {
               </p>
             </div>
             <div className="flex flex-col items-center text-center gap-1.5">
-              <div className="w-9 h-9 rounded-full bg-[#3A20BA]/10 flex items-center justify-center text-[#3A20BA]">
+              <div className="w-9 h-9 rounded-full bg-[#2053BA]/10 flex items-center justify-center text-[#2053BA]">
                 <BookOpen className="w-4 h-4" />
               </div>
               <p className="text-[10px] font-bold leading-tight text-gray-800">
@@ -271,7 +271,7 @@ export default async function Home() {
               href="/privacy-policy"
               className="p-3 bg-gray-50/80 rounded-2xl border border-gray-100 flex flex-col justify-between hover:bg-gray-100/80 transition-colors"
             >
-              <ShieldCheck className="w-4 h-4 text-[#3A20BA] mb-2" />
+              <ShieldCheck className="w-4 h-4 text-[#2053BA] mb-2" />
               <div>
                 <h3 className="text-xs font-bold text-gray-900">Privacy Policy</h3>
                 <p className="text-[10px] text-gray-500">Data protection guidelines</p>
@@ -319,23 +319,23 @@ export default async function Home() {
               <span><strong>Brand:</strong> Exam Kart</span>
             </div>
             <div className="flex items-center gap-2">
-              <Mail className="w-3.5 h-3.5 text-[#3A20BA] shrink-0" />
+              <Mail className="w-3.5 h-3.5 text-[#2053BA] shrink-0" />
               <span className="truncate">
                 <strong>Email:</strong>{" "}
-                <a href="mailto:support@exam-kart.com" className="text-[#3A20BA] font-bold underline">
+                <a href="mailto:support@exam-kart.com" className="text-[#2053BA] font-bold underline">
                   support@exam-kart.com
                 </a>
               </span>
             </div>
             <div className="flex items-start gap-2">
-              <MapPin className="w-3.5 h-3.5 text-[#3A20BA] shrink-0 mt-0.5" />
+              <MapPin className="w-3.5 h-3.5 text-[#2053BA] shrink-0 mt-0.5" />
               <span><strong>Address:</strong> 282, Sector 4, Hisar Haryana 125001</span>
             </div>
             <div className="flex items-center gap-2">
-              <Globe className="w-3.5 h-3.5 text-[#3A20BA] shrink-0" />
+              <Globe className="w-3.5 h-3.5 text-[#2053BA] shrink-0" />
               <span className="truncate">
                 <strong>Web:</strong>{" "}
-                <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#3A20BA] font-bold underline">
+                <a href="https://exam-kart.com/" target="_blank" rel="noreferrer" className="text-[#2053BA] font-bold underline">
                   https://exam-kart.com/
                 </a>
               </span>

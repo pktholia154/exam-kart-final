@@ -86,7 +86,7 @@ export default async function CategoriesPage() {
       <div className="space-y-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-            <Grid className="w-5 h-5 text-[#3A20BA]" /> Browse Categories
+            <Grid className="w-5 h-5 text-[#2053BA]" /> Browse Categories
           </h1>
           <p className="text-xs text-gray-600 mt-1 font-medium leading-relaxed">
             Find solved question papers, prep guides, and academic documents categorized for fast indexing and structured learning.
@@ -100,11 +100,11 @@ export default async function CategoriesPage() {
             const seoInfo = CATEGORY_SEO_DATA[catSlug];
 
             const colors = [
-              "bg-[#3A20BA]/5 border-[#3A20BA]/10 hover:bg-[#3A20BA]/10",
+              "bg-[#2053BA]/5 border-[#2053BA]/10 hover:bg-[#2053BA]/10",
               "bg-[#2053BA]/5 border-[#2053BA]/10 hover:bg-[#2053BA]/10",
               "bg-[#8720BA]/5 border-[#8720BA]/10 hover:bg-[#8720BA]/10",
             ];
-            const textColors = ["text-[#3A20BA]", "text-[#2053BA]", "text-[#8720BA]"];
+            const textColors = ["text-[#2053BA]", "text-[#2053BA]", "text-[#8720BA]"];
             const styleIdx = i % 3;
 
             return (
@@ -119,7 +119,7 @@ export default async function CategoriesPage() {
                   {cat.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-xs font-extrabold text-gray-900 group-hover:text-[#3A20BA] transition-colors leading-snug line-clamp-2">
+                  <h2 className="text-xs font-extrabold text-gray-900 group-hover:text-[#2053BA] transition-colors leading-snug line-clamp-2">
                     {cat.name}
                   </h2>
                   <p className="text-[10px] text-gray-500 mt-0.5 font-semibold">
