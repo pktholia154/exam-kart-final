@@ -3,6 +3,9 @@ import Link from "next/link";
 import { getCategoriesServer, getBooksServer, SITE_URL, slugify, CATEGORY_SEO_DATA } from "@/lib/books-server";
 import { Grid, ChevronRight, BookOpen } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Explore All Exam Categories | Exam Kart E-Book Store",
   description: "Browse exam preparation e-books by category: Banking Exams, UPSC, SSC, Railways, Defense, Insurance, Teaching, Engineering, and more.",

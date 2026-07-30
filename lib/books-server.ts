@@ -66,17 +66,23 @@ export function slugify(text: string): string {
  * Wrapped with React cache() to deduplicate requests across single request lifetime.
  */
 export const getBooksServer = cache(async (): Promise<Book[]> => {
-  if (process.env.npm_lifecycle_event === 'build') {
-    return DEFAULT_BOOKS;
-  }
   try {
     const snap = await getDocs(collection(db, "books"));
     if (!snap.empty) {
-      const books = snap.docs.map(d => parseBookDoc(d));
-      if (books.length > 0) return books;
+      const dbBooks = snap.docs.map(d => parseBookDoc(d));
+      if (dbBooks.length > 0) {
+        // Merge DB books with DEFAULT_BOOKS to ensure all default books are also available if DB has a subset
+        const dbBookIds = new Set(dbBooks.map(b => b.id.toLowerCase()));
+        const dbBookSlugs = new Set(dbBooks.map(b => b.seoslug.toLowerCase()));
+        
+        const nonDuplicateDefaults = DEFAULT_BOOKS.filter(
+          b => !dbBookIds.has(b.id.toLowerCase()) && !dbBookSlugs.has(b.seoslug.toLowerCase())
+        );
+        return [...dbBooks, ...nonDuplicateDefaults];
+      }
     }
   } catch (err) {
-    console.warn("getBooksServer notice (using fallback):", err);
+    console.warn("getBooksServer notice (using default fallback):", err);
   }
   return DEFAULT_BOOKS;
 });
@@ -86,22 +92,25 @@ export const getBooksServer = cache(async (): Promise<Book[]> => {
  * Wrapped with React cache().
  */
 export const getCategoriesServer = cache(async (): Promise<Category[]> => {
-  if (process.env.npm_lifecycle_event === 'build') {
-    return DEFAULT_CATEGORIES;
-  }
   try {
     const snap = await getDocs(collection(db, "categories"));
     if (!snap.empty) {
-      const categories: Category[] = snap.docs.map(d => {
+      const dbCategories: Category[] = snap.docs.map(d => {
         const data = d.data();
         const name = data.name || "Category";
         const seoslug = data.seoslug || slugify(name);
         return { id: d.id, name, seoslug };
       });
-      if (categories.length > 0) return categories;
+      if (dbCategories.length > 0) {
+        const dbCatSlugs = new Set(dbCategories.map(c => c.seoslug.toLowerCase()));
+        const nonDuplicateDefaults = DEFAULT_CATEGORIES.filter(
+          c => !dbCatSlugs.has(c.seoslug.toLowerCase())
+        );
+        return [...dbCategories, ...nonDuplicateDefaults];
+      }
     }
   } catch (err) {
-    console.warn("getCategoriesServer notice (using fallback):", err);
+    console.warn("getCategoriesServer notice (using default fallback):", err);
   }
   return DEFAULT_CATEGORIES;
 });
@@ -112,12 +121,6 @@ export const getCategoriesServer = cache(async (): Promise<Category[]> => {
  */
 export const getBookBySlugServer = cache(async (slugOrId: string): Promise<Book | null> => {
   const decoded = decodeURIComponent(slugOrId).toLowerCase();
-  
-  if (process.env.npm_lifecycle_event === 'build') {
-    return DEFAULT_BOOKS.find(
-      (b) => b.seoslug.toLowerCase() === decoded || b.id === decoded
-    ) || null;
-  }
 
   try {
     // 1. Try direct doc ID
@@ -136,9 +139,10 @@ export const getBookBySlugServer = cache(async (slugOrId: string): Promise<Book 
     console.warn("getBookBySlugServer notice (using fallback check):", err);
   }
 
-  // Fallback match from DEFAULT_BOOKS
-  const found = DEFAULT_BOOKS.find(
-    (b) => b.seoslug.toLowerCase() === decoded || b.id === decoded
+  // Fallback match from DEFAULT_BOOKS or getBooksServer
+  const all = await getBooksServer();
+  const found = all.find(
+    (b) => b.seoslug.toLowerCase() === decoded || b.id.toLowerCase() === decoded
   );
   return found || null;
 });
@@ -153,7 +157,7 @@ export const getRelatedBooksServer = cache(async (categoryName: string, currentS
   const catClean = categoryName.toLowerCase();
 
   const related = all.filter(
-    b => b.seoslug.toLowerCase() !== currentClean && b.category.toLowerCase() === catClean
+    b => b.seoslug.toLowerCase() !== currentClean && b.category.toLowerCase().includes(catClean)
   );
 
   if (related.length >= limitCount) {
@@ -162,7 +166,7 @@ export const getRelatedBooksServer = cache(async (categoryName: string, currentS
 
   // Add items from other categories if not enough
   const extra = all.filter(
-    b => b.seoslug.toLowerCase() !== currentClean && b.category.toLowerCase() !== catClean
+    b => b.seoslug.toLowerCase() !== currentClean && !b.category.toLowerCase().includes(catClean)
   );
   return [...related, ...extra].slice(0, limitCount);
 });
@@ -191,7 +195,21 @@ export const getCategoryBySlugServer = cache(async (slugOrName: string): Promise
 
   const allBooks = await getBooksServer();
   const catNameClean = matchedCat.name.toLowerCase();
-  const books = allBooks.filter(b => b.category.toLowerCase() === catNameClean);
+  const catSlugClean = matchedCat.seoslug.toLowerCase();
+
+  const books = allBooks.filter(b => {
+    if (!b.category) return false;
+    const bCat = b.category.toLowerCase();
+    const bCatSlug = slugify(b.category);
+    return (
+      bCat === catNameClean ||
+      bCatSlug === catSlugClean ||
+      bCat.includes(catNameClean) ||
+      catNameClean.includes(bCat) ||
+      bCatSlug.includes(catSlugClean) ||
+      catSlugClean.includes(bCatSlug)
+    );
+  });
 
   const defaultSeo = CATEGORY_SEO_DATA[matchedCat.seoslug] || {
     title: `${matchedCat.name} E-Books & Study Material`,

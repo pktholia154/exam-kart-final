@@ -10,6 +10,9 @@ import {
 import { BookCard } from "@/components/BookCard";
 import { ChevronRight, BookOpen, Inbox, ChevronLeft } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
 }

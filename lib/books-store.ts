@@ -202,12 +202,12 @@ export async function fetchFirestoreCategories(): Promise<Category[]> {
       ...(d.data() as Omit<Category, 'id'>)
     }));
 
-    cachedCategoriesMemory = categories;
-    saveToLocalStorage("cached_categories", categories);
-    return categories;
+    cachedCategoriesMemory = categories.length > 0 ? categories : DEFAULT_CATEGORIES;
+    saveToLocalStorage("cached_categories", cachedCategoriesMemory);
+    return cachedCategoriesMemory;
   } catch (err) {
     handleFirestoreError(err, OperationType.LIST, "categories");
-    return cachedCategoriesMemory || [];
+    return cachedCategoriesMemory && cachedCategoriesMemory.length > 0 ? cachedCategoriesMemory : DEFAULT_CATEGORIES;
   }
 }
 
@@ -251,13 +251,13 @@ async function refreshBooksInBackground(): Promise<Book[]> {
 
       const books: Book[] = snap.docs.map((d) => parseBookDoc(d));
 
-      cachedBooksMemory = books;
-      saveToLocalStorage("cached_books", books);
+      cachedBooksMemory = books.length > 0 ? books : DEFAULT_BOOKS;
+      saveToLocalStorage("cached_books", cachedBooksMemory);
       lastRefreshTime = Date.now();
-      return books;
+      return cachedBooksMemory;
     } catch (err) {
       handleFirestoreError(err, OperationType.LIST, "books");
-      return cachedBooksMemory || [];
+      return (cachedBooksMemory && cachedBooksMemory.length > 0) ? cachedBooksMemory : DEFAULT_BOOKS;
     } finally {
       inFlightRefreshPromise = null;
     }

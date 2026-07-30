@@ -25,6 +25,9 @@ import {
   Sparkles,
 } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Exam Kart | Native Competitive Exam E-Book Store & Solved Papers",
   description:
