@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || "9a5bbmZLhY27bp41KKKVxJNC";
     if (!keySecret) {
       console.error("Razorpay key secret is missing from environment variables.");
       return NextResponse.json(

@@ -6,8 +6,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { amount, currency = "INR", receipt, notes } = body;
 
-    const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_TJc8qwXIssrTXY";
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || "9a5bbmZLhY27bp41KKKVxJNC";
 
     if (!keyId || !keySecret) {
       console.error("Razorpay API Keys missing from environment variables");
