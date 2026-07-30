@@ -61,12 +61,12 @@ export default function SearchPage() {
   }, [displayBooks, searchQuery]);
 
   return (
-    <main className="min-h-screen bg-white pb-8 max-w-md mx-auto overflow-x-hidden">
+    <main className="min-h-screen bg-white pb-20 max-w-md md:max-w-2xl mx-auto overflow-x-hidden">
       {/* Header / Search */}
-      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md px-4 pt-4 pb-4 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-700 transition-colors">
-            <ChevronLeft className="w-6 h-6" />
+      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md px-2.5 pt-3 pb-3 border-b border-gray-100">
+        <div className="flex items-center gap-2.5">
+          <Link href="/" className="p-1.5 -ml-1 rounded-full hover:bg-gray-100 text-gray-700 transition-colors">
+            <ChevronLeft className="w-5 h-5" />
           </Link>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3A20BA]" />
@@ -76,13 +76,13 @@ export default function SearchPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search books..."
-              className="w-full bg-gray-50 border border-[#3A20BA]/30 rounded-full py-2.5 pl-10 pr-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#3A20BA]/50 transition-all shadow-[0_0_0_4px_rgba(58,32,186,0.1)]"
+              className="w-full bg-gray-50 border border-[#3A20BA]/30 rounded-full py-2 pl-9 pr-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#3A20BA]/50 transition-all shadow-[0_0_0_3px_rgba(58,32,186,0.08)]"
             />
           </div>
         </div>
       </div>
 
-      <div className="px-4 mt-6">
+      <div className="px-2.5 mt-4">
         {loading ? (
           <div className="flex justify-center items-center py-12">
             <div className="w-8 h-8 border-4 border-gray-200 border-t-[#3A20BA] rounded-full animate-spin"></div>

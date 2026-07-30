@@ -10,7 +10,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <main className="min-h-screen pt-20 pb-8 max-w-md mx-auto px-6 flex flex-col items-center justify-center text-center">
+      <main className="min-h-screen pt-20 pb-8 max-w-md md:max-w-2xl mx-auto px-6 flex flex-col items-center justify-center text-center">
         <div className="w-16 h-16 bg-[#3A20BA]/10 text-[#3A20BA] rounded-full flex items-center justify-center mb-4">
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
         </div>
@@ -28,24 +28,24 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen pt-4 pb-8 max-w-md mx-auto px-4">
-      <h1 className="text-xl font-bold text-gray-900 mb-6 tracking-tight">Profile</h1>
+    <main className="min-h-screen pt-3 pb-20 max-w-md md:max-w-2xl mx-auto px-2.5 bg-white">
+      <h1 className="text-lg font-black text-gray-900 mb-4 tracking-tight">My Profile</h1>
       
-      <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 mb-6">
-        <div className="w-14 h-14 bg-[#3A20BA] rounded-full flex items-center justify-center text-white text-xl font-bold shrink-0">
+      <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex items-center gap-3.5 mb-4">
+        <div className="w-12 h-12 bg-[#3A20BA] rounded-full flex items-center justify-center text-white text-lg font-extrabold shrink-0">
           {user.displayName?.[0] || "U"}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-bold text-gray-900 truncate">{user.displayName}</h2>
-          <p className="text-xs text-gray-500 truncate">{user.email}</p>
+          <h2 className="text-xs font-bold text-gray-900 truncate">{user.displayName}</h2>
+          <p className="text-[11px] text-gray-500 truncate font-medium">{user.email}</p>
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-[#8720BA] to-[#3A20BA] rounded-3xl p-5 text-white shadow-md mb-6 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#8720BA] to-[#3A20BA] rounded-2xl p-4 text-white shadow-sm mb-4 relative overflow-hidden">
         <div className="relative z-10">
-          <h3 className="text-base font-bold mb-1">Refer & Earn</h3>
-          <p className="text-xs text-white/80 mb-4">Invite friends and earn ₹50 on their first purchase.</p>
-          <button className="bg-white text-[#8720BA] px-4 py-2 rounded-full text-xs font-bold active:scale-95 transition-transform">Share Invite Link</button>
+          <h3 className="text-sm font-extrabold mb-0.5">Refer & Earn</h3>
+          <p className="text-[11px] text-white/80 mb-3">Invite friends and earn ₹50 on their first purchase.</p>
+          <button className="bg-white text-[#8720BA] px-3.5 py-1.5 rounded-full text-xs font-extrabold active:scale-95 transition-transform">Share Invite Link</button>
         </div>
       </div>
 

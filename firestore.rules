@@ -67,14 +67,16 @@ service cloud.firestore {
       allow get: if isValidId(categoryId);
       allow list: if true;
       allow create: if isSignedIn() && isValidId(categoryId) && isValidCategory(incoming());
-      // No updates or deletes allowed for now
+      allow delete: if isSignedIn();
+      // No updates allowed for now
     }
     
     match /books/{bookId} {
       allow get: if isValidId(bookId);
       allow list: if true;
       allow create: if isSignedIn() && isValidId(bookId) && isValidBook(incoming());
-      // No updates or deletes allowed for now
+      allow delete: if isSignedIn();
+      // No updates allowed for now
     }
     
     match /purchases/{purchaseId} {

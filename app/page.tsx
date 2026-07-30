@@ -8,7 +8,6 @@ import {
 } from "@/lib/books-server";
 import { BookCard } from "@/components/BookCard";
 import { ProceduralCover } from "@/components/ProceduralCover";
-import { SeedDataButton } from "@/components/SeedDataButton";
 import { SearchBarAnimated } from "@/components/SearchBarAnimated";
 import { HeaderActions } from "@/components/HeaderActions";
 import {
@@ -95,61 +94,61 @@ export default async function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-white pb-8 max-w-md mx-auto overflow-x-hidden">
+    <main className="min-h-screen bg-white pb-8 max-w-md md:max-w-2xl mx-auto overflow-x-hidden">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdHome) }}
       />
 
       {/* Header / Search bar */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-4 pt-4 pb-2 border-b border-gray-100/80">
-        <div className="flex items-center justify-between mb-4">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-2.5 pt-3 pb-2 border-b border-gray-100/80">
+        <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl font-extrabold text-[#3A20BA] tracking-tight">ExamKart</h1>
           <HeaderActions />
         </div>
         <SearchBarAnimated />
       </header>
 
-      <div className="px-4 space-y-7 mt-3">
-        {/* Banner */}
-        <section className="bg-gradient-to-br from-[#3A20BA] via-[#2D2FB8] to-[#2053BA] rounded-3xl p-5 text-white shadow-lg shadow-[#3A20BA]/20 relative overflow-hidden">
+      <div className="px-2.5 space-y-5 mt-2.5">
+        {/* Banner - Vertical height decreased by 20% */}
+        <section className="bg-gradient-to-br from-[#3A20BA] via-[#2D2FB8] to-[#2053BA] rounded-2xl py-3.5 px-4 text-white shadow-md shadow-[#3A20BA]/15 relative overflow-hidden">
           <div className="relative z-10 w-2/3">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-md text-[10px] font-extrabold uppercase tracking-wider mb-2">
-              <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" /> Deal of the Day
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-md text-[9px] font-extrabold uppercase tracking-wider mb-1">
+              <Sparkles className="w-2.5 h-2.5 text-amber-300 fill-amber-300" /> Deal of the Day
             </span>
-            <h2 className="text-xl font-bold mb-1 leading-tight">UPSC Prelims Masterclass</h2>
-            <p className="text-xs text-white/80 mb-4 line-clamp-2">
+            <h2 className="text-base font-bold mb-0.5 leading-tight">UPSC Prelims Masterclass</h2>
+            <p className="text-[11px] text-white/85 mb-2.5 line-clamp-2 leading-snug">
               Complete CSAT guide with 10 years solved papers and quantitative reasoning formulas.
             </p>
             <Link
               href="/book/upsc-prelims-csat"
-              className="inline-block bg-white text-[#3A20BA] px-4 py-2 rounded-full text-xs font-extrabold active:scale-95 transition-transform shadow-sm"
+              className="inline-block bg-white text-[#3A20BA] px-3.5 py-1.5 rounded-full text-[11px] font-extrabold active:scale-95 transition-transform shadow-sm"
             >
               Get Now at ₹199
             </Link>
           </div>
-          <div className="absolute right-[-15%] top-[-10%] w-36 h-36 bg-white/10 rounded-full blur-2xl"></div>
-          <div className="absolute right-[5%] bottom-[-20%] w-28 h-28 bg-black/10 rounded-full blur-xl"></div>
+          <div className="absolute right-[-10%] top-[-10%] w-28 h-28 bg-white/10 rounded-full blur-xl"></div>
+          <div className="absolute right-[5%] bottom-[-20%] w-20 h-20 bg-black/10 rounded-full blur-lg"></div>
         </section>
 
         {/* Active Reading Rail */}
         <section aria-labelledby="heading-continue-reading">
-          <div className="flex items-center justify-between mb-3">
-            <h2 id="heading-continue-reading" className="text-sm font-bold text-gray-900 tracking-tight">
+          <div className="flex items-center justify-between mb-2">
+            <h2 id="heading-continue-reading" className="text-xs font-extrabold text-gray-900 tracking-tight">
               Continue Reading
             </h2>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory no-scrollbar -mx-4 px-4">
+          <div className="flex gap-2.5 overflow-x-auto pb-1.5 snap-x snap-mandatory no-scrollbar -mx-2.5 px-2.5">
             {books.slice(0, 3).map((book, idx) => (
               <Link
                 key={book.id || idx}
                 href={`/book/${book.seoslug}`}
-                className="snap-start shrink-0 w-64 p-3 bg-gray-50 border border-gray-100 rounded-2xl flex items-center gap-3 hover:bg-gray-100/80 transition-colors"
+                className="snap-start shrink-0 w-60 p-2.5 bg-gray-50 border border-gray-100 rounded-xl flex items-center gap-2.5 hover:bg-gray-100/80 transition-colors"
               >
-                <ProceduralCover title={book.title} className="w-10 shrink-0 shadow-sm" />
+                <ProceduralCover title={book.title} className="w-9 shrink-0 shadow-sm" />
                 <div className="flex-1 min-w-0">
                   <h3 className="text-xs font-bold text-gray-900 truncate mb-1">{book.title}</h3>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1.5">
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
                     <div
                       className="bg-[#53BA20] h-1.5 rounded-full"
                       style={{ width: `${((idx * 23) % 40) + 40}%` }}
@@ -348,8 +347,6 @@ export default async function Home() {
           </p>
         </footer>
 
-        {/* Database Seeding Controls */}
-        <SeedDataButton />
       </div>
     </main>
   );

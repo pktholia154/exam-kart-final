@@ -37,7 +37,7 @@ export default function ContactUsPage() {
   };
 
   return (
-    <main className="min-h-screen pt-4 pb-12 max-w-md mx-auto px-4 bg-white">
+    <main className="min-h-screen pt-4 pb-12 max-w-md md:max-w-2xl mx-auto px-4 bg-white">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdContact) }}

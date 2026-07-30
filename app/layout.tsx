@@ -15,6 +15,25 @@ export const metadata: Metadata = {
   title: 'Current Affairs E-Book Store',
   description: 'Native-Feel PWA E-Book Store',
   manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ExamKart',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    apple: '/icon.svg',
+  },
+};
+
+export const viewport = {
+  themeColor: '#3A20BA',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

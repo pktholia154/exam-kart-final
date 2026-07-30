@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { User, Download } from 'lucide-react';
+import { User, Download, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
 
@@ -9,6 +9,7 @@ import Image from 'next/image';
 export function HeaderActions() {
   const { user, loading } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalling, setIsInstalling] = useState(false);
   const [isInstalled, setIsInstalled] = useState(() => {
     if (typeof window !== 'undefined') {
       return (
@@ -45,14 +46,16 @@ export function HeaderActions() {
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
       // Fallback message if prompt is not available
-      alert('To install the app, use your browser menu and select "Add to Home Screen".');
+      alert('To install the app, tap the Share icon in your browser menu and select "Add to Home Screen".');
       return;
     }
+    setIsInstalling(true);
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === 'accepted') {
       setDeferredPrompt(null);
     }
+    setIsInstalling(false);
   };
 
   return (
@@ -60,10 +63,15 @@ export function HeaderActions() {
       {!isInstalled && (
         <button
           onClick={handleInstallClick}
-          className="flex items-center gap-1 bg-[#3A20BA] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm active:scale-95 transition-transform"
+          disabled={isInstalling}
+          className="flex items-center gap-1 bg-[#3A20BA] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm active:scale-95 transition-transform disabled:opacity-70 disabled:active:scale-100"
         >
-          <Download className="w-3.5 h-3.5" />
-          Install App
+          {isInstalling ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Download className="w-3.5 h-3.5" />
+          )}
+          {isInstalling ? 'Installing...' : 'Install App'}
         </button>
       )}
       

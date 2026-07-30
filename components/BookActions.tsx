@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType, signInWithPopup, googleProvider, auth } from "@/lib/firebase";
-import { BookOpen, Check, ShieldAlert, Loader2, CreditCard } from "lucide-react";
+import { BookOpen, Check, ShieldAlert, Loader2, CreditCard, Share2, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { Book } from "@/lib/books-store";
 
@@ -26,6 +26,7 @@ export function BookActions({ book }: BookActionsProps) {
   const [hasPurchased, setHasPurchased] = useState(false);
   const [checkingPurchase, setCheckingPurchase] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const bookIdOrSlug = book.id || book.seoslug;
 
@@ -61,6 +62,31 @@ export function BookActions({ book }: BookActionsProps) {
       active = false;
     };
   }, [user, book?.id, book?.seoslug]);
+
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const shareData = {
+      title: book.title,
+      text: book.seoDescription || `Check out ${book.title} on Exam Kart!`,
+      url: url,
+    };
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User closed native share sheet
+      }
+    } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      } catch (err) {
+        console.error("Clipboard copy error:", err);
+      }
+    }
+  };
 
   // Dynamically load Razorpay checkout.js script if not present
   const loadRazorpayScript = (): Promise<boolean> => {
@@ -181,6 +207,7 @@ export function BookActions({ book }: BookActionsProps) {
                 category: book.category,
                 orderId: response.razorpay_order_id,
                 paymentId: response.razorpay_payment_id,
+                pdfurl: book.pdfurl || "",
                 purchasedAt: new Date().toISOString(),
               });
 
@@ -232,7 +259,7 @@ export function BookActions({ book }: BookActionsProps) {
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2.5">
       {errorMessage && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl p-3 flex items-start gap-2 shadow-sm">
           <ShieldAlert className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
@@ -248,14 +275,14 @@ export function BookActions({ book }: BookActionsProps) {
         </div>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex gap-2.5">
         {hasPurchased ? (
           <>
             <Link
-              href={`/read/${bookIdOrSlug}?type=full&url=${encodeURIComponent(
-                book.pdfurl || book.sampleurl || ""
+              href={`/read/${bookIdOrSlug}?type=sample&url=${encodeURIComponent(
+                book.sampleurl || book.pdfurl || ""
               )}`}
-              className="flex-1 bg-white text-[#3A20BA] py-2.5 px-2 rounded-xl text-xs font-bold border border-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5 shadow-sm"
+              className="flex-1 bg-[#16a34a] hover:bg-[#15803d] text-white py-2.5 px-2 rounded-xl text-xs font-extrabold shadow-md shadow-emerald-600/25 active:scale-95 transition-all flex items-center justify-center gap-1.5 ring-2 ring-emerald-400/40 animate-[pulse_2.5s_cubic-bezier(0.4,0,0.6,1)_infinite]"
             >
               <BookOpen className="w-3.5 h-3.5" />
               Sample
@@ -264,7 +291,7 @@ export function BookActions({ book }: BookActionsProps) {
               href={`/read/${bookIdOrSlug}?type=full&url=${encodeURIComponent(
                 book.pdfurl || book.sampleurl || ""
               )}`}
-              className="flex-[1.5] bg-[#53BA20] text-white py-2.5 px-2 rounded-xl text-xs font-bold shadow-md shadow-[#53BA20]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+              className="flex-[1.5] bg-[#3A20BA] text-white py-2.5 px-2 rounded-xl text-xs font-bold shadow-md shadow-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
             >
               <Check className="w-3.5 h-3.5" />
               Purchased
@@ -276,7 +303,7 @@ export function BookActions({ book }: BookActionsProps) {
               href={`/read/${bookIdOrSlug}?type=sample&url=${encodeURIComponent(
                 book.sampleurl || book.pdfurl || ""
               )}`}
-              className="flex-1 bg-white text-[#3A20BA] py-2.5 px-2 rounded-xl text-xs font-bold border border-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5 shadow-sm"
+              className="flex-1 bg-[#16a34a] hover:bg-[#15803d] text-white py-2.5 px-2 rounded-xl text-xs font-extrabold shadow-md shadow-emerald-600/25 active:scale-95 transition-all flex items-center justify-center gap-1.5 ring-2 ring-emerald-400/40 animate-[pulse_2.5s_cubic-bezier(0.4,0,0.6,1)_infinite]"
             >
               <BookOpen className="w-3.5 h-3.5" />
               Sample
@@ -301,6 +328,24 @@ export function BookActions({ book }: BookActionsProps) {
           </>
         )}
       </div>
+
+      {/* Prominent Share Button */}
+      <button
+        onClick={handleShare}
+        className="w-full bg-[#3A20BA]/10 hover:bg-[#3A20BA]/15 text-[#3A20BA] py-2.5 px-4 rounded-xl text-xs font-extrabold border border-[#3A20BA]/25 flex items-center justify-center gap-2 active:scale-95 transition-all shadow-2xs"
+      >
+        {copied ? (
+          <>
+            <CheckCheck className="w-4 h-4 text-emerald-600" />
+            <span className="text-emerald-700">Link Copied to Clipboard!</span>
+          </>
+        ) : (
+          <>
+            <Share2 className="w-4 h-4 text-[#3A20BA]" />
+            <span>Share E-Book</span>
+          </>
+        )}
+      </button>
     </div>
   );
 }

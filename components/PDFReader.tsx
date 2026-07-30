@@ -143,19 +143,17 @@ export default function PDFReader() {
       }
 
       const viewport = page.getViewport({ scale: renderScale });
-      const ctx = canvas.getContext("2d", { alpha: false });
-      if (!ctx) return;
 
       // High-DPI (Retina) scaling for crystal clear rendering
       const dpr = Math.max(window.devicePixelRatio || 1, 2);
 
-      // Set canvas pixel buffer dimensions
-      canvas.width = Math.floor(viewport.width * dpr);
-      canvas.height = Math.floor(viewport.height * dpr);
+      const pixelWidth = Math.floor(viewport.width * dpr);
+      const pixelHeight = Math.floor(viewport.height * dpr);
 
       const aspectWidth = Math.floor(viewport.width);
       const aspectHeight = Math.floor(viewport.height);
 
+      // Instant CSS update for this specific page
       canvas.style.width = `${aspectWidth}px`;
       canvas.style.maxWidth = "100%";
       canvas.style.height = "auto";
@@ -166,15 +164,27 @@ export default function PDFReader() {
         wrapper.style.aspectRatio = `${aspectWidth} / ${aspectHeight}`;
       }
 
-      ctx.save();
-      ctx.scale(dpr, dpr);
+      const scaleKey = `${renderScale.toFixed(4)}_${dpr}`;
+      if (canvas.getAttribute("data-render-key") === scaleKey) {
+        return; // Already rendered at this exact crisp resolution
+      }
+
+      // Render to an offscreen canvas first to prevent white flashes while zooming
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = pixelWidth;
+      tempCanvas.height = pixelHeight;
+      const tempCtx = tempCanvas.getContext("2d", { alpha: false });
+      if (!tempCtx) return;
+
+      tempCtx.save();
+      tempCtx.scale(dpr, dpr);
 
       // Fill clean white background before rendering
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, viewport.width, viewport.height);
+      tempCtx.fillStyle = "#ffffff";
+      tempCtx.fillRect(0, 0, viewport.width, viewport.height);
 
       const renderContext = {
-        canvasContext: ctx,
+        canvasContext: tempCtx,
         viewport: viewport,
       };
 
@@ -183,7 +193,16 @@ export default function PDFReader() {
 
       await renderTask.promise;
       delete activeRenderTasksRef.current[num];
-      ctx.restore();
+      tempCtx.restore();
+
+      // Swap the rendered buffer to the visible canvas for instant clarity
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (ctx) {
+        ctx.drawImage(tempCanvas, 0, 0);
+      }
+      canvas.setAttribute("data-render-key", scaleKey);
     } catch (err: any) {
       if (err?.name !== "RenderingCancelledException") {
         console.warn(`Render error on page ${num}:`, err);
@@ -210,10 +229,18 @@ export default function PDFReader() {
 
     // Get page 1 viewport to calculate initial page aspect ratio for placeholder wrappers
     let sampleAspect = "1 / 1.414"; // Standard A4 default
+    let initialAspectWidth = 0;
     try {
       const page1 = await doc.getPage(1);
-      const vp1 = page1.getViewport({ scale: 1.0 });
+      let initialScale = scaleRef.current;
+      if (fitToWidthRef.current && scrollView) {
+        const unscaledViewport = page1.getViewport({ scale: 1.0 });
+        const availableWidth = Math.max(scrollView.clientWidth - 24, 280);
+        initialScale = availableWidth / unscaledViewport.width;
+      }
+      const vp1 = page1.getViewport({ scale: initialScale });
       sampleAspect = `${vp1.width} / ${vp1.height}`;
+      initialAspectWidth = Math.floor(vp1.width);
     } catch (e) {
       console.warn("Could not inspect page 1 viewport:", e);
     }
@@ -255,10 +282,18 @@ export default function PDFReader() {
       wrapper.className = "pdf-page-wrapper";
       wrapper.setAttribute("data-page-num", i.toString());
       wrapper.style.aspectRatio = sampleAspect;
+      if (initialAspectWidth > 0) {
+        wrapper.style.maxWidth = `${initialAspectWidth}px`;
+      }
 
       const canvas = document.createElement("canvas");
       canvas.className = "pdf-page-canvas";
       canvas.setAttribute("data-page-num", i.toString());
+      if (initialAspectWidth > 0) {
+        canvas.style.width = `${initialAspectWidth}px`;
+        canvas.style.maxWidth = "100%";
+        canvas.style.aspectRatio = sampleAspect;
+      }
 
       wrapper.appendChild(canvas);
       canvasContainer.appendChild(wrapper);
@@ -271,10 +306,69 @@ export default function PDFReader() {
     }
   }, [renderPage]);
 
+  // Update zoom CSS and re-trigger renders without destroying the DOM
+  const applyZoom = useCallback(async () => {
+    const doc = pdfDocRef.current;
+    if (!doc) return;
+
+    try {
+      const page1 = await doc.getPage(1);
+      
+      let renderScale = scaleRef.current;
+      const container = scrollViewRef.current;
+      const availableWidth = container ? Math.max(container.clientWidth - 24, 280) : window.innerWidth - 24;
+
+      const unscaledViewport = page1.getViewport({ scale: 1.0 });
+
+      if (fitToWidthRef.current && availableWidth > 0) {
+        renderScale = availableWidth / unscaledViewport.width;
+      }
+
+      const viewport1 = page1.getViewport({ scale: renderScale });
+      const aspectWidth = Math.floor(viewport1.width);
+      const aspectHeight = Math.floor(viewport1.height);
+      const sampleAspect = `${aspectWidth} / ${aspectHeight}`;
+
+      // 1. Immediately update CSS on all wrappers and canvases for instant zoom
+      pageWrappersRef.current.forEach((wrapper) => {
+        if (wrapper) {
+          wrapper.style.maxWidth = `${aspectWidth}px`;
+          wrapper.style.aspectRatio = sampleAspect;
+        }
+      });
+
+      pageCanvasesRef.current.forEach((canvas) => {
+        if (canvas) {
+          canvas.style.width = `${aspectWidth}px`;
+          canvas.style.maxWidth = "100%";
+          canvas.style.height = "auto";
+          canvas.style.aspectRatio = sampleAspect;
+        }
+      });
+
+      // 2. Reset render states to allow re-rendering at the new resolution
+      pageRenderStatesRef.current.fill(false);
+
+      // 3. Re-trigger observer for visible elements
+      if (renderObserverRef.current && scrollViewRef.current) {
+        renderObserverRef.current.disconnect();
+        requestAnimationFrame(() => {
+          if (renderObserverRef.current) {
+            pageWrappersRef.current.forEach((wrapper) => {
+              if (wrapper) renderObserverRef.current!.observe(wrapper);
+            });
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("Error applying zoom:", e);
+    }
+  }, []);
+
   // Re-render all pages
   const reRenderAll = useCallback(() => {
-    setupPages();
-  }, [setupPages]);
+    applyZoom();
+  }, [applyZoom]);
 
   // Handle window resize to adjust fit-to-width mode
   useEffect(() => {

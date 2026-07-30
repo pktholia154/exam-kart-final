@@ -9,7 +9,7 @@ export default function AdminSEODashboard() {
     title: "SBI PO Prelims 2026 Complete Solved Question Bank",
     seoslug: "sbi-po-prelims-2026-solved-papers",
     category: "Banking Exams",
-    publsher: "Exam Kart Press",
+    publisher: "Exam Kart Press",
     pdfurl: "https://pdfobject.com/pdf/sample.pdf",
     sampleurl: "https://pdfobject.com/pdf/sample.pdf",
     listprice: "299",

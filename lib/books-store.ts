@@ -7,7 +7,7 @@ export interface Book {
   title: string;
   seoslug: string;
   category: string;
-  publsher: string;
+  publisher: string;
   pdfurl: string;
   sampleurl: string;
   listprice: string;
@@ -87,7 +87,7 @@ export function parseBookDoc(docSnap: any): Book {
     title: data.title || data.name || meta.title || "Untitled Book",
     seoslug: data.seoslug || data.slug || meta.seoslug || docSnap.id,
     category: data.category || data.categoryName || meta.category || "General",
-    publsher: data.publsher || data.publisher || meta.publisher || "Unknown",
+    publisher: data.publisher || data.publisher || meta.publisher || "Unknown",
     pdfurl: finalPdfUrl,
     sampleurl: finalSampleUrl,
     listprice: String(data.listprice ?? data.listPrice ?? meta.listprice ?? "199"),

@@ -115,14 +115,14 @@ export default async function CategoryDetailPage({ params }: CategoryPageProps) 
   };
 
   return (
-    <main className="min-h-screen pt-4 pb-24 max-w-md mx-auto px-4 overflow-x-hidden bg-white">
+    <main className="min-h-screen pt-3 pb-24 max-w-md md:max-w-2xl mx-auto px-2.5 overflow-x-hidden bg-white">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdCategory) }}
       />
 
       {/* Breadcrumb Navigation */}
-      <nav aria-label="Breadcrumb" className="mb-3 text-[11px] text-gray-500 font-medium">
+      <nav aria-label="Breadcrumb" className="mb-2.5 text-[11px] text-gray-500 font-medium">
         <ol className="flex items-center gap-1.5">
           <li>
             <Link href="/" className="hover:text-gray-900 transition-colors">
@@ -142,7 +142,7 @@ export default async function CategoryDetailPage({ params }: CategoryPageProps) 
         </ol>
       </nav>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header Section */}
         <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
           <Link
@@ -163,13 +163,13 @@ export default async function CategoryDetailPage({ params }: CategoryPageProps) 
         </div>
 
         {/* Category Description Copy */}
-        <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-100 text-xs text-gray-700 leading-relaxed space-y-2">
+        <div className="bg-gray-50/80 p-3.5 rounded-2xl border border-gray-100 text-xs text-gray-700 leading-relaxed space-y-1.5">
           <p className="font-semibold text-gray-900">{seo.description}</p>
           <p className="text-gray-600 font-normal">{seo.longContent}</p>
         </div>
 
         {/* Crawlable Quick-Switch Category Pills */}
-        <div className="-mx-4 px-4 overflow-x-auto no-scrollbar flex gap-2">
+        <div className="-mx-2.5 px-2.5 overflow-x-auto no-scrollbar flex gap-2">
           {allCategories.map((cat, idx) => {
             const catSlug = cat.seoslug || slugify(cat.name);
             const isActive = catSlug === category.seoslug;

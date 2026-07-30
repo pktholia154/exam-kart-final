@@ -8,7 +8,7 @@ export interface PublishBookPayload {
   title: string;
   seoslug?: string;
   category: string;
-  publsher?: string;
+  publisher?: string;
   pdfurl: string;
   sampleurl?: string;
   listprice: string;
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       title: payload.title.trim(),
       seoslug: cleanSlug,
       category: payload.category.trim(),
-      publsher: payload.publsher || "Exam Kart Press",
+      publisher: payload.publisher || "Exam Kart Press",
       pdfurl: payload.pdfurl || "https://pdfobject.com/pdf/sample.pdf",
       sampleurl: payload.sampleurl || payload.pdfurl || "https://pdfobject.com/pdf/sample.pdf",
       listprice: payload.listprice || payload.buyprice,

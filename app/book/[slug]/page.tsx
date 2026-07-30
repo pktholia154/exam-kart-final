@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: BookPageProps): Promise<Metad
   const title = `${book.title} PDF - Solved Paper & Study Guide | Exam Kart`;
   const description =
     book.seoDescription ||
-    `Download ${book.title} PDF e-book for ${book.category} prep. Author/Publisher: ${book.publsher}. Buy at ₹${book.buyprice}.`;
+    `Download ${book.title} PDF e-book for ${book.category} prep. Author/Publisher: ${book.publisher}. Buy at ₹${book.buyprice}.`;
 
   return {
     title,
@@ -108,7 +108,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
         numberOfPages: book.pageCount,
         publisher: {
           "@type": "Organization",
-          name: book.publsher || "Exam Kart Press",
+          name: book.publisher || "Exam Kart Press",
         },
         genre: book.category,
         keywords: book.tags ? book.tags.join(", ") : book.category,
@@ -174,7 +174,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
   };
 
   return (
-    <main className="min-h-screen max-w-md mx-auto bg-white pb-20 relative overflow-x-hidden">
+    <main className="min-h-screen max-w-md md:max-w-2xl mx-auto bg-white pb-20 relative overflow-x-hidden">
       {/* Inject JSON-LD */}
       <script
         type="application/ld+json"
@@ -267,7 +267,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
               <Building2 className="w-3 h-3 text-gray-400" />
               Publisher:{" "}
               <span className="font-bold text-gray-900">
-                {book.publsher || "Exam Kart Press"}
+                {book.publisher || "Exam Kart Press"}
               </span>
             </div>
 

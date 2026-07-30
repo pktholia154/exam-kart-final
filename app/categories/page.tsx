@@ -62,14 +62,14 @@ export default async function CategoriesPage() {
   };
 
   return (
-    <main className="min-h-screen pt-4 pb-24 max-w-md mx-auto px-4 overflow-x-hidden bg-white">
+    <main className="min-h-screen pt-3 pb-24 max-w-md md:max-w-2xl mx-auto px-2.5 overflow-x-hidden bg-white">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdCategories) }}
       />
 
       {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="mb-3 text-[11px] text-gray-500 font-medium">
+      <nav aria-label="Breadcrumb" className="mb-2.5 text-[11px] text-gray-500 font-medium">
         <ol className="flex items-center gap-1.5">
           <li>
             <Link href="/" className="hover:text-gray-900 transition-colors">
@@ -83,7 +83,7 @@ export default async function CategoriesPage() {
         </ol>
       </nav>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
             <Grid className="w-5 h-5 text-[#3A20BA]" /> Browse Categories
