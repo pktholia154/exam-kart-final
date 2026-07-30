@@ -463,7 +463,7 @@ export default function PDFReader() {
         if (engineRef.current) engineRef.current.destroy();
 
         // Use pre-wired browser engine that will load pdfium.esm.wasm
-        const engine = await createEngine({ wasmUrl: '/pdfium.esm.wasm' });
+        const engine = await createEngine({ wasmUrl: 'https://unpkg.com/clawpdf@0.3.0/dist/vendor/pdfium.esm.wasm' });
         engineRef.current = engine;
         
         const doc = await engine.open(new Uint8Array(arrayBuffer));
@@ -501,7 +501,7 @@ export default function PDFReader() {
         if (pdfDocRef.current) pdfDocRef.current[Symbol.dispose]();
         if (engineRef.current) engineRef.current.destroy();
 
-        const engine = await createEngine({ wasmUrl: '/pdfium.esm.wasm' });
+        const engine = await createEngine({ wasmUrl: 'https://unpkg.com/clawpdf@0.3.0/dist/vendor/pdfium.esm.wasm' });
         engineRef.current = engine;
         
         const doc = await engine.open(new Uint8Array(arrayBuffer));

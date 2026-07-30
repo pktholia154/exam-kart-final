@@ -50,7 +50,7 @@ const nextConfig: NextConfig = {
       };
       
       config.plugins.push(
-        new webpack.NormalModuleReplacementPlugin(/^node:/, (resource: any) => {
+        new webpack.NormalModuleReplacementPlugin(/^node:(fs\/promises|url|zlib)$/, (resource: any) => {
           resource.request = path.resolve(__dirname, 'dummy.js');
         })
       );
