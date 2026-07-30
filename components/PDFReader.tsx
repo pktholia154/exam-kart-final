@@ -419,7 +419,8 @@ export default function PDFReader() {
         e.preventDefault();
         const dist = getDistance(e.touches);
         if (initialDist > 0) {
-          currentFactor = dist / initialDist;
+          const rawFactor = dist / initialDist;
+          currentFactor = 1 + (rawFactor - 1) * 0.4;
           const targetScale = Math.min(Math.max(startScale * currentFactor, 0.6), 4.0);
 
           // Instant 60fps CSS transform feedback during pinch gesture
@@ -455,7 +456,7 @@ export default function PDFReader() {
         e.preventDefault();
         setFitToWidth(false);
         fitToWidthRef.current = false;
-        const delta = e.deltaY < 0 ? 0.2 : -0.2;
+        const delta = e.deltaY < 0 ? 0.1 : -0.1;
         setScale((prev) => {
           const next = Math.min(Math.max(+(prev + delta).toFixed(2), 0.6), 4.0);
           scaleRef.current = next;
@@ -687,7 +688,7 @@ export default function PDFReader() {
                 </p>
               </div>
             )}
-            <div ref={canvasContainerRef} className="w-full flex flex-col items-center origin-top transition-transform duration-75" />
+            <div ref={canvasContainerRef} className="w-max min-w-full mx-auto flex flex-col gap-4 items-center origin-top transition-transform duration-75" />
           </div>
         )}
 
@@ -695,7 +696,6 @@ export default function PDFReader() {
         {!useFallback && !noUrlError && !isLoading && isPdfLoaded && (
           <div className="floating-bottom-bar" id="bottom-toolbar">
             <div className="page-info">
-              <span>Page</span>
               <input
                 type="number"
                 id="page-num"
@@ -705,7 +705,7 @@ export default function PDFReader() {
                 max={numPages || 1}
                 onChange={handlePageInputChange}
               />
-              <span>
+              <span className="whitespace-nowrap flex items-center gap-1">
                 / <span id="page-count">{numPages || "-"}</span>
               </span>
             </div>

@@ -26,20 +26,20 @@ html {
 
 .floating-bottom-bar {
   position: fixed;
-  bottom: max(32px, calc(20px + env(safe-area-inset-bottom, 24px)));
+  bottom: max(16px, calc(12px + env(safe-area-inset-bottom, 16px)));
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(15, 23, 42, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background-color: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
-  padding: 10px 20px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   z-index: 1000;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .floating-bottom-bar.hidden {
@@ -47,12 +47,12 @@ html {
 }
 
 .reader-btn {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: transparent;
   color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -64,7 +64,7 @@ html {
 }
 
 .reader-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .reader-btn:active {
@@ -77,23 +77,24 @@ html {
 }
 
 .page-info {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: #f8fafc;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .page-input {
-  width: 48px;
+  width: 40px;
   text-align: center;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #fff;
-  border-radius: 8px;
-  padding: 4px 6px;
-  font-size: 13px;
+  border-radius: 6px;
+  padding: 2px 4px;
+  font-size: 12px;
   font-weight: bold;
 }
 
@@ -110,11 +111,8 @@ html {
 #pdf-scroll-view {
   flex: 1;
   overflow: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: block;
   padding: 16px 8px 140px 8px;
-  gap: 16px;
   background-color: #0f172a;
   -webkit-overflow-scrolling: touch;
   position: relative;
