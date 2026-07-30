@@ -9,6 +9,8 @@ import {
 import { BookCard } from "@/components/BookCard";
 import { ProceduralCover } from "@/components/ProceduralCover";
 import { SeedDataButton } from "@/components/SeedDataButton";
+import { SearchBarAnimated } from "@/components/SearchBarAnimated";
+import { HeaderActions } from "@/components/HeaderActions";
 import {
   Search,
   ChevronRight,
@@ -101,12 +103,11 @@ export default async function Home() {
 
       {/* Header / Search bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-4 pt-4 pb-2 border-b border-gray-100/80">
-        <Link href="/search" className="block w-full group">
-          <div className="relative flex items-center w-full bg-gray-50 border border-gray-200/80 rounded-full py-2.5 pl-10 pr-4 text-xs font-medium text-gray-500 hover:border-[#3A20BA]/30 transition-colors shadow-sm">
-            <Search className="absolute left-3.5 w-4 h-4 text-gray-400 group-hover:text-[#3A20BA] transition-colors" />
-            <span>Search books, exams, authors...</span>
-          </div>
-        </Link>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-extrabold text-[#3A20BA] tracking-tight">ExamKart</h1>
+          <HeaderActions />
+        </div>
+        <SearchBarAnimated />
       </header>
 
       <div className="px-4 space-y-7 mt-3">

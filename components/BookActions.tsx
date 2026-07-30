@@ -4,13 +4,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
-import { db, handleFirestoreError, OperationType } from "@/lib/firebase";
-import { BookOpen, Check } from "lucide-react";
+import { db, handleFirestoreError, OperationType, signInWithPopup, googleProvider, auth } from "@/lib/firebase";
+import { BookOpen, Check, ShieldAlert, Loader2, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { Book } from "@/lib/books-store";
 
 interface BookActionsProps {
   book: Book;
+}
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
 }
 
 export function BookActions({ book }: BookActionsProps) {
@@ -19,6 +25,7 @@ export function BookActions({ book }: BookActionsProps) {
   const [buying, setBuying] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [checkingPurchase, setCheckingPurchase] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const bookIdOrSlug = book.id || book.seoslug;
 
@@ -55,73 +62,242 @@ export function BookActions({ book }: BookActionsProps) {
     };
   }, [user, book?.id, book?.seoslug]);
 
+  // Dynamically load Razorpay checkout.js script if not present
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window === "undefined") {
+        resolve(false);
+        return;
+      }
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleBuy = async () => {
-    if (!user) {
-      router.push("/purchased");
+    setErrorMessage(null);
+
+    // 1. Ensure User Authentication
+    let currentUser = user;
+    if (!currentUser) {
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        currentUser = result.user;
+      } catch (authError: any) {
+        console.error("Authentication failed:", authError);
+        setErrorMessage("Please sign in with Google to purchase this e-book.");
+        return;
+      }
+    }
+
+    if (!currentUser) {
+      setErrorMessage("Please sign in to proceed with payment.");
       return;
     }
+
     setBuying(true);
+
     try {
-      await addDoc(collection(db, "purchases"), {
-        userId: user.uid,
-        bookId: book.id || book.seoslug,
-        title: book.title,
-        seoslug: book.seoslug,
-        category: book.category,
-        purchasedAt: new Date().toISOString(),
+      // 2. Load Razorpay SDK
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        setErrorMessage("Failed to load Razorpay payment gateway. Please check your internet connection.");
+        setBuying(false);
+        return;
+      }
+
+      // 3. Calculate amount in paise (Min 100 paise = ₹1)
+      const priceNum = parseFloat(book.buyprice) || 99;
+      const amountInPaise = Math.max(100, Math.round(priceNum * 100));
+
+      // 4. Create Order on Backend
+      const orderResponse = await fetch("/api/create-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: amountInPaise,
+          currency: "INR",
+          receipt: `rcpt_${book.seoslug.substring(0, 20)}_${Date.now()}`,
+          notes: {
+            bookId: book.id || book.seoslug,
+            bookTitle: book.title,
+            userId: currentUser.uid,
+          },
+        }),
       });
-      setHasPurchased(true);
-      router.push("/purchased");
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, "purchases");
-    } finally {
+
+      const orderData = await orderResponse.json();
+
+      if (!orderResponse.ok || !orderData.order_id) {
+        throw new Error(orderData.error || "Failed to initialize order with Razorpay.");
+      }
+
+      // 5. Open Razorpay Standard Checkout Modal
+      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_TJbh62wgHwERAr";
+
+      const options = {
+        key: razorpayKey,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Exam Kart",
+        description: book.title,
+        order_id: orderData.order_id,
+        handler: async function (response: any) {
+          try {
+            // 6. Verify Payment Signature on Backend
+            const verifyResponse = await fetch("/api/verify-payment", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyResponse.json();
+
+            if (verifyResponse.ok && verifyData.success) {
+              // 7. Store purchase in Firestore
+              await addDoc(collection(db, "purchases"), {
+                userId: currentUser.uid,
+                bookId: book.id || book.seoslug,
+                title: book.title,
+                seoslug: book.seoslug,
+                category: book.category,
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                purchasedAt: new Date().toISOString(),
+              });
+
+              setHasPurchased(true);
+              router.push("/purchased");
+            } else {
+              setErrorMessage(
+                verifyData.error || "Payment signature verification failed. Please contact support if debited."
+              );
+            }
+          } catch (verifyErr: any) {
+            console.error("Error verifying payment signature:", verifyErr);
+            setErrorMessage("An error occurred while verifying your payment signature.");
+          } finally {
+            setBuying(false);
+          }
+        },
+        prefill: {
+          name: currentUser.displayName || "Student",
+          email: currentUser.email || "",
+        },
+        theme: {
+          color: "#3A20BA",
+        },
+        modal: {
+          ondismiss: function () {
+            setBuying(false);
+            console.log("Razorpay payment modal closed by user.");
+          },
+        },
+      };
+
+      const razorpayInstance = new window.Razorpay(options);
+
+      razorpayInstance.on("payment.failed", function (failResponse: any) {
+        console.error("Razorpay payment failed:", failResponse.error);
+        setBuying(false);
+        setErrorMessage(
+          failResponse.error?.description || "Payment failed. Please try again or use a different payment method."
+        );
+      });
+
+      razorpayInstance.open();
+    } catch (err: any) {
+      console.error("Error during checkout:", err);
+      setErrorMessage(err.message || "An unexpected error occurred during checkout.");
       setBuying(false);
     }
   };
 
   return (
-    <div className="flex gap-3">
-      {hasPurchased ? (
-        <>
-          <Link
-            href={`/read/${bookIdOrSlug}?type=full&url=${encodeURIComponent(
-              book.pdfurl || book.sampleurl || ""
-            )}`}
-            className="flex-1 bg-white text-[#3A20BA] py-2.5 px-2 rounded-xl text-xs font-bold border border-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5 shadow-sm"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            Sample
-          </Link>
-          <Link
-            href={`/read/${bookIdOrSlug}?type=full&url=${encodeURIComponent(
-              book.pdfurl || book.sampleurl || ""
-            )}`}
-            className="flex-[1.5] bg-[#53BA20] text-white py-2.5 px-2 rounded-xl text-xs font-bold shadow-md shadow-[#53BA20]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
-          >
-            <Check className="w-3.5 h-3.5" />
-            Purchased
-          </Link>
-        </>
-      ) : (
-        <>
-          <Link
-            href={`/read/${bookIdOrSlug}?type=sample&url=${encodeURIComponent(
-              book.sampleurl || book.pdfurl || ""
-            )}`}
-            className="flex-1 bg-white text-[#3A20BA] py-2.5 px-2 rounded-xl text-xs font-bold border border-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5 shadow-sm"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            Sample
-          </Link>
+    <div className="flex flex-col gap-2">
+      {errorMessage && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl p-3 flex items-start gap-2 shadow-sm">
+          <ShieldAlert className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold">{errorMessage}</p>
+          </div>
           <button
-            onClick={handleBuy}
-            disabled={buying || checkingPurchase}
-            className="flex-[1.5] w-full bg-[#3A20BA] text-white py-2.5 px-2 rounded-xl text-xs font-bold shadow-md shadow-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5 disabled:opacity-70"
+            onClick={() => setErrorMessage(null)}
+            className="text-red-400 hover:text-red-600 font-bold text-xs"
           >
-            {buying ? "Processing..." : `Buy Now • ₹${book.buyprice}`}
+            ✕
           </button>
-        </>
+        </div>
       )}
+
+      <div className="flex gap-3">
+        {hasPurchased ? (
+          <>
+            <Link
+              href={`/read/${bookIdOrSlug}?type=full&url=${encodeURIComponent(
+                book.pdfurl || book.sampleurl || ""
+              )}`}
+              className="flex-1 bg-white text-[#3A20BA] py-2.5 px-2 rounded-xl text-xs font-bold border border-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              Sample
+            </Link>
+            <Link
+              href={`/read/${bookIdOrSlug}?type=full&url=${encodeURIComponent(
+                book.pdfurl || book.sampleurl || ""
+              )}`}
+              className="flex-[1.5] bg-[#53BA20] text-white py-2.5 px-2 rounded-xl text-xs font-bold shadow-md shadow-[#53BA20]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5"
+            >
+              <Check className="w-3.5 h-3.5" />
+              Purchased
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link
+              href={`/read/${bookIdOrSlug}?type=sample&url=${encodeURIComponent(
+                book.sampleurl || book.pdfurl || ""
+              )}`}
+              className="flex-1 bg-white text-[#3A20BA] py-2.5 px-2 rounded-xl text-xs font-bold border border-[#3A20BA]/20 active:scale-95 transition-transform flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              Sample
+            </Link>
+            <button
+              onClick={handleBuy}
+              disabled={buying || checkingPurchase}
+              className="flex-[1.5] w-full bg-[#3A20BA] hover:bg-[#301a9c] text-white py-2.5 px-2 rounded-xl text-xs font-bold shadow-md shadow-[#3A20BA]/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-70 cursor-pointer"
+            >
+              {buying ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-3.5 h-3.5" />
+                  Buy Now • ₹{book.buyprice}
+                </>
+              )}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

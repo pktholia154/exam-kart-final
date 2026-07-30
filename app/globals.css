@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  font-size: 18px;
+}
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;

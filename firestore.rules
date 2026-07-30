@@ -52,13 +52,15 @@ service cloud.firestore {
     }
     
     function isValidPurchase(data) {
-      return data.keys().hasAll(['userId', 'bookId', 'title', 'seoslug', 'category', 'purchasedAt']) && data.keys().size() == 6 &&
+      return data.keys().hasAll(['userId', 'bookId', 'title', 'seoslug', 'category', 'purchasedAt']) &&
              data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
              data.bookId is string && data.bookId.size() <= 128 &&
              data.title is string && data.title.size() <= 200 &&
              data.seoslug is string && data.seoslug.size() <= 200 &&
              data.category is string && data.category.size() <= 100 &&
-             data.purchasedAt is string && data.purchasedAt.size() <= 100;
+             data.purchasedAt is string && data.purchasedAt.size() <= 100 &&
+             (!data.keys().hasAny(['orderId']) || (data.orderId is string && data.orderId.size() <= 128)) &&
+             (!data.keys().hasAny(['paymentId']) || (data.paymentId is string && data.paymentId.size() <= 128));
     }
     
     match /categories/{categoryId} {

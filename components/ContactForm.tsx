@@ -83,12 +83,12 @@ export function ContactForm() {
             <div className="min-w-0">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Office Address</p>
               <p className="text-xs font-bold text-gray-900 leading-snug">
-                282, Sector 4, Hisar Haryana 125001
+                1st Floor, SCO-28, Sector 13, Bhiwani, Haryana 127021
               </p>
             </div>
           </div>
           <button 
-            onClick={() => handleCopy("282, Sector 4, Hisar Haryana 125001", "address")}
+            onClick={() => handleCopy("1st Floor, SCO-28, Sector 13, Bhiwani, Haryana 127021", "address")}
             className="p-2 rounded-lg text-gray-400 hover:text-[#2053BA] active:scale-90 transition-transform"
             title="Copy address"
           >

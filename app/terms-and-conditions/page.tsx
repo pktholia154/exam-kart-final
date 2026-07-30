@@ -130,7 +130,7 @@ export default function TermsAndConditionsPage() {
         <section className="space-y-2">
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">6. Disclaimers & Governing Law</h2>
           <p>
-            Our materials are designed for competitive exam preparation. Exam Kart makes reasonable efforts to ensure accuracy. These terms are governed by the laws of India, with jurisdiction in Hisar, Haryana.
+            Our materials are designed for competitive exam preparation. Exam Kart makes reasonable efforts to ensure accuracy. These terms are governed by the laws of India, with jurisdiction in Bhiwani, Haryana.
           </p>
         </section>
 
@@ -151,7 +151,7 @@ export default function TermsAndConditionsPage() {
             </div>
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 text-[#3A20BA] shrink-0 mt-0.5" />
-              <span>Address: 282, Sector 4, Hisar Haryana 125001</span>
+              <span>Address: 1st Floor, SCO-28, Sector 13, Bhiwani, Haryana 127021</span>
             </div>
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-[#3A20BA] shrink-0" />

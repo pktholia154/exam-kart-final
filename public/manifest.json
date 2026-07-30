@@ -1,8 +1,8 @@
 {
-  "name": "Current Affairs E-Book Store",
-  "short_name": "EBook Store",
+  "name": "ExamKart E-Book Store",
+  "short_name": "ExamKart",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#F5F5F7",
   "theme_color": "#3A20BA",
   "icons": [

@@ -156,7 +156,7 @@ export default function RefundAndCancellationPage() {
             </div>
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 text-[#3A20BA] shrink-0 mt-0.5" />
-              <span>Address: 282, Sector 4, Hisar Haryana 125001</span>
+              <span>Address: 1st Floor, SCO-28, Sector 13, Bhiwani, Haryana 127021</span>
             </div>
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-[#3A20BA] shrink-0" />
