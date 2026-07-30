@@ -142,7 +142,10 @@ export function BookActions({ book }: BookActionsProps) {
       }
 
       // 5. Open Razorpay Standard Checkout Modal
-      const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_TJc8qwXIssrTXY";
+      let razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+      if (!razorpayKey || razorpayKey.includes("test")) {
+        razorpayKey = "rzp_live_TJc8qwXIssrTXY";
+      }
 
       const options = {
         key: razorpayKey,

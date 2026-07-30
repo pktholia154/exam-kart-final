@@ -6,8 +6,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { amount, currency = "INR", receipt, notes } = body;
 
-    const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_TJc8qwXIssrTXY";
-    const keySecret = process.env.RAZORPAY_KEY_SECRET || "9a5bbmZLhY27bp41KKKVxJNC";
+    // Force LIVE keys. Ignoring environment variables if they contain test keys
+    let keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    if (!keyId || keyId.includes("test")) {
+      keyId = "rzp_live_TJc8qwXIssrTXY";
+    }
+    
+    let keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret || keySecret === "5YY3DJgo3nsqviP6zTNvFB4G") { // if empty or matches the old test secret
+      keySecret = "9a5bbmZLhY27bp41KKKVxJNC";
+    }
 
     if (!keyId || !keySecret) {
       console.error("Razorpay API Keys missing from environment variables");
