@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -32,94 +33,27 @@ const nextConfig: NextConfig = {
     ],
   },
   transpilePackages: ['motion'],
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
-          },
-        ],
-      },
-      {
-        source: '/',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
-          },
-          {
-            key: 'Cache-Tag',
-            value: 'examkart-public-home',
-          },
-        ],
-      },
-      {
-        source: '/book/:slug*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
-          },
-          {
-            key: 'Cache-Tag',
-            value: 'examkart-public-books',
-          },
-        ],
-      },
-      {
-        source: '/categories/:slug*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
-          },
-          {
-            key: 'Cache-Tag',
-            value: 'examkart-public-categories',
-          },
-        ],
-      },
-      {
-        source: '/purchased',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'private, no-store, no-cache, must-revalidate',
-          },
-        ],
-      },
-      {
-        source: '/profile',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'private, no-store, no-cache, must-revalidate',
-          },
-        ],
-      },
-      {
-        source: '/read/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'private, no-store, no-cache, must-revalidate',
-          },
-        ],
-      },
-    ];
-  },
-  webpack: (config, { dev }) => {
+  webpack: (config, { dev, isServer, webpack }) => {
     if (dev && process.env.DISABLE_HMR === 'true') {
       config.watchOptions = {
         ignored: /.*/,
       };
+    }
+    
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        module: false,
+        url: false,
+        zlib: false,
+      };
+      
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^node:/, (resource: any) => {
+          resource.request = path.resolve(__dirname, 'dummy.js');
+        })
+      );
     }
     return config;
   },

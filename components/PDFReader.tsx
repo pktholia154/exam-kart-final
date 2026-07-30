@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { Maximize2, ZoomIn, ZoomOut } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { fetchFirestoreBookBySlugOrId } from "@/lib/books-store";
+
+import { createEngine, PdfEngine, PdfDocument } from "clawpdf/browser";
 
 export default function PDFReader() {
   const params = useParams();
@@ -27,8 +29,6 @@ export default function PDFReader() {
   const [fitToWidth, setFitToWidth] = useState<boolean>(true);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [useFallback, setUseFallback] = useState(false);
-  const [fallbackSrc, setFallbackSrc] = useState<string>("");
   const [noUrlError, setNoUrlError] = useState(false);
 
   const scrollViewRef = useRef<HTMLDivElement | null>(null);
@@ -36,11 +36,11 @@ export default function PDFReader() {
   const pageWrappersRef = useRef<HTMLDivElement[]>([]);
   const pageCanvasesRef = useRef<HTMLCanvasElement[]>([]);
   const pageRenderStatesRef = useRef<boolean[]>([]);
-  const activeRenderTasksRef = useRef<Record<number, any>>({});
   const renderObserverRef = useRef<IntersectionObserver | null>(null);
   const activePageObserverRef = useRef<IntersectionObserver | null>(null);
-  const isLoadedRef = useRef<boolean>(false);
-  const pdfDocRef = useRef<any>(null);
+  
+  const engineRef = useRef<PdfEngine | null>(null);
+  const pdfDocRef = useRef<PdfDocument | null>(null);
 
   const scaleRef = useRef<number>(1.0);
   const fitToWidthRef = useRef<boolean>(true);
@@ -99,38 +99,15 @@ export default function PDFReader() {
     };
   }, [explicitUrl, decodedBookId, readType]);
 
-  // Fallback Frame Handler
-  const triggerFallbackFrame = useCallback((urlToUse: string) => {
-    if (isLoadedRef.current) return;
-    isLoadedRef.current = true;
-    setUseFallback(true);
-    setIsLoading(false);
-
-    if (urlToUse.startsWith("http://") || urlToUse.startsWith("https://")) {
-      setFallbackSrc(`https://docs.google.com/viewer?url=${encodeURIComponent(urlToUse)}&embedded=true`);
-    } else {
-      setFallbackSrc(urlToUse);
-    }
-  }, []);
-
   // Render a single page canvas with exact proportional scaling and high-DPI sharpness
   const renderPage = useCallback(async (num: number, canvas: HTMLCanvasElement, wrapper: HTMLDivElement) => {
     const doc = pdfDocRef.current;
     if (!doc) return;
 
-    // Cancel existing render task for this page if in progress
-    if (activeRenderTasksRef.current[num]) {
-      try {
-        activeRenderTasksRef.current[num].cancel();
-      } catch {
-        // Ignore cancel errors
-      }
-      delete activeRenderTasksRef.current[num];
-    }
-
     try {
-      const page = await doc.getPage(num);
-      const unscaledViewport = page.getViewport({ scale: 1.0 });
+      const page = doc.page(num);
+      const unscaledWidth = page.width;
+      const unscaledHeight = page.height;
 
       // Determine correct zoom scale based on fitToWidth mode or user zoom
       let renderScale = scaleRef.current;
@@ -138,19 +115,16 @@ export default function PDFReader() {
       const availableWidth = container ? Math.max(container.clientWidth - 24, 280) : window.innerWidth - 24;
 
       if (fitToWidthRef.current && availableWidth > 0) {
-        renderScale = availableWidth / unscaledViewport.width;
+        renderScale = availableWidth / unscaledWidth;
       }
-
-      const viewport = page.getViewport({ scale: renderScale });
 
       // High-DPI (Retina/Mobile) super-sampling for crystal clear ultra-sharp text
       const dpr = Math.max(window.devicePixelRatio || 1, 2.5);
+      const targetScale = renderScale * dpr;
 
-      const pixelWidth = Math.floor(viewport.width * dpr);
-      const pixelHeight = Math.floor(viewport.height * dpr);
-
-      const aspectWidth = Math.floor(viewport.width);
-      const aspectHeight = Math.floor(viewport.height);
+      // Pre-calculate aspects for instant CSS updates to prevent layout shifts
+      const aspectWidth = Math.floor(unscaledWidth * renderScale);
+      const aspectHeight = Math.floor(unscaledHeight * renderScale);
 
       // Instant CSS update for this specific page
       canvas.style.width = `${aspectWidth}px`;
@@ -168,50 +142,24 @@ export default function PDFReader() {
         return; // Already rendered at this exact crisp resolution
       }
 
-      // Render to an offscreen canvas first to prevent white flashes while zooming
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = pixelWidth;
-      tempCanvas.height = pixelHeight;
-      const tempCtx = tempCanvas.getContext("2d", { alpha: false });
-      if (!tempCtx) return;
+      // Use PDFium WASM to render the page block directly to RGBA array
+      // To keep UI highly responsive we use setTimeout 0 so render block doesn't completely freeze
+      await new Promise(resolve => setTimeout(resolve, 0));
+      const { width: pixelWidth, height: pixelHeight, rgba } = page.render({ scale: targetScale, background: "white" });
 
-      tempCtx.imageSmoothingEnabled = true;
-      tempCtx.imageSmoothingQuality = "high";
-
-      tempCtx.save();
-      tempCtx.scale(dpr, dpr);
-
-      // Fill clean white background before rendering
-      tempCtx.fillStyle = "#ffffff";
-      tempCtx.fillRect(0, 0, viewport.width, viewport.height);
-
-      const renderContext = {
-        canvasContext: tempCtx,
-        viewport: viewport,
-      };
-
-      const renderTask = page.render(renderContext);
-      activeRenderTasksRef.current[num] = renderTask;
-
-      await renderTask.promise;
-      delete activeRenderTasksRef.current[num];
-      tempCtx.restore();
-
-      // Swap the rendered buffer to the visible canvas for instant clarity
       canvas.width = pixelWidth;
       canvas.height = pixelHeight;
       const ctx = canvas.getContext("2d", { alpha: false });
       if (ctx) {
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(tempCanvas, 0, 0);
+        const imageData = new ImageData(new Uint8ClampedArray(rgba.buffer), pixelWidth, pixelHeight);
+        ctx.putImageData(imageData, 0, 0);
       }
       canvas.setAttribute("data-render-key", scaleKey);
     } catch (err: any) {
-      if (err?.name !== "RenderingCancelledException") {
-        console.warn(`Render error on page ${num}:`, err);
-        pageRenderStatesRef.current[num] = false;
-      }
+      console.warn(`Render error on page ${num}:`, err);
+      pageRenderStatesRef.current[num] = false;
     }
   }, []);
 
@@ -229,22 +177,20 @@ export default function PDFReader() {
     canvasContainer.replaceChildren();
     pageWrappersRef.current = [];
     pageCanvasesRef.current = [];
-    pageRenderStatesRef.current = new Array(doc.numPages + 1).fill(false);
+    pageRenderStatesRef.current = new Array(doc.pageCount + 1).fill(false);
 
     // Get page 1 viewport to calculate initial page aspect ratio for placeholder wrappers
     let sampleAspect = "1 / 1.414"; // Standard A4 default
     let initialAspectWidth = 0;
     try {
-      const page1 = await doc.getPage(1);
+      const page1 = doc.page(1);
       let initialScale = scaleRef.current;
       if (fitToWidthRef.current && scrollView) {
-        const unscaledViewport = page1.getViewport({ scale: 1.0 });
         const availableWidth = Math.max(scrollView.clientWidth - 24, 280);
-        initialScale = availableWidth / unscaledViewport.width;
+        initialScale = availableWidth / page1.width;
       }
-      const vp1 = page1.getViewport({ scale: initialScale });
-      sampleAspect = `${vp1.width} / ${vp1.height}`;
-      initialAspectWidth = Math.floor(vp1.width);
+      sampleAspect = `${page1.width} / ${page1.height}`;
+      initialAspectWidth = Math.floor(page1.width * initialScale);
     } catch (e) {
       console.warn("Could not inspect page 1 viewport:", e);
     }
@@ -281,7 +227,7 @@ export default function PDFReader() {
       { root: scrollView, threshold: 0.25 }
     );
 
-    for (let i = 1; i <= doc.numPages; i++) {
+    for (let i = 1; i <= doc.pageCount; i++) {
       const wrapper = document.createElement("div");
       wrapper.className = "pdf-page-wrapper";
       wrapper.setAttribute("data-page-num", i.toString());
@@ -315,21 +261,18 @@ export default function PDFReader() {
     if (!doc) return;
 
     try {
-      const page1 = await doc.getPage(1);
+      const page1 = doc.page(1);
 
       let renderScale = scaleRef.current;
       const container = scrollViewRef.current;
       const availableWidth = container ? Math.max(container.clientWidth - 24, 280) : window.innerWidth - 24;
 
-      const unscaledViewport = page1.getViewport({ scale: 1.0 });
-
       if (fitToWidthRef.current && availableWidth > 0) {
-        renderScale = availableWidth / unscaledViewport.width;
+        renderScale = availableWidth / page1.width;
       }
 
-      const viewport1 = page1.getViewport({ scale: renderScale });
-      const aspectWidth = Math.floor(viewport1.width);
-      const aspectHeight = Math.floor(viewport1.height);
+      const aspectWidth = Math.floor(page1.width * renderScale);
+      const aspectHeight = Math.floor(page1.height * renderScale);
       const sampleAspect = `${aspectWidth} / ${aspectHeight}`;
 
       // 1. Immediately update CSS on all wrappers and canvases for instant response
@@ -500,124 +443,107 @@ export default function PDFReader() {
     };
   }, [reRenderAll]);
 
-  // Main PDF loading runner
+  // Main PDF loading runner using PDFium WASM
   useEffect(() => {
     if (!isUrlResolved || !fileUrl || noUrlError) return;
 
     let active = true;
-    let loadTimeout: NodeJS.Timeout;
 
-    // Safety timeout: 4 seconds fallback
-    loadTimeout = setTimeout(() => {
-      if (active && !isLoadedRef.current && !pdfDocRef.current) {
-        console.warn("PDF.js loading timeout reached. Switching to fallback viewer...");
-        triggerFallbackFrame(fileUrl);
-      }
-    }, 4000);
-
-    // Load PDF.js engine with Standard Fonts & CMaps configuration
     async function initPdfEngine() {
-      if (!(window as any).pdfjsLib) {
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement("script");
-          script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-          script.async = true;
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error("Failed to load pdf.js script"));
-          document.head.appendChild(script);
-        });
-      }
-
-      const pdfjsLib = (window as any).pdfjsLib;
-      if (pdfjsLib) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      }
-
-      const pdfDocumentConfig = {
-        cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/",
-        cMapPacked: true,
-        standardFontDataUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/",
-      };
-
-      // First attempt: Fetch ArrayBuffer directly
       try {
+        // Fetch ArrayBuffer directly
         const response = await fetch(fileUrl, { mode: "cors" });
         if (!response.ok) throw new Error("Network response not OK");
         const arrayBuffer = await response.arrayBuffer();
 
         if (!active) return;
-        const loadingTask = pdfjsLib.getDocument({
-          data: arrayBuffer,
-          ...pdfDocumentConfig,
-        });
-        const doc = await loadingTask.promise;
+        
+        // Ensure old doc/engine is destroyed before creating new
+        if (pdfDocRef.current) pdfDocRef.current[Symbol.dispose]();
+        if (engineRef.current) engineRef.current.destroy();
 
-        if (!active) return;
-        clearTimeout(loadTimeout);
-        isLoadedRef.current = true;
+        // Use pre-wired browser engine that will load pdfium.esm.wasm
+        const engine = await createEngine({ wasmUrl: '/pdfium.esm.wasm' });
+        engineRef.current = engine;
+        
+        const doc = await engine.open(new Uint8Array(arrayBuffer));
+        
+        if (!active) {
+          doc[Symbol.dispose]();
+          engine.destroy();
+          return;
+        }
+
         pdfDocRef.current = doc;
         setIsPdfLoaded(true);
-        setNumPages(doc.numPages);
+        setNumPages(doc.pageCount);
         setIsLoading(false);
 
         setupPages();
       } catch (fetchErr) {
         console.warn("Direct fetch ArrayBuffer failed/CORS. Attempting proxy load...", fetchErr);
         if (!active) return;
-        tryProxyLoad(pdfjsLib, pdfDocumentConfig);
+        tryProxyLoad();
       }
     }
 
-    async function tryProxyLoad(pdfjsLib: any, pdfConfig: any) {
+    async function tryProxyLoad() {
       const proxyUrl = "/api/pdf?url=" + encodeURIComponent(fileUrl);
 
       try {
-        const loadingTask = pdfjsLib.getDocument({
-          url: proxyUrl,
-          withCredentials: false,
-          ...pdfConfig,
-        });
-        const doc = await loadingTask.promise;
-
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error("Proxy response not OK");
+        const arrayBuffer = await response.arrayBuffer();
+        
         if (!active) return;
-        clearTimeout(loadTimeout);
-        isLoadedRef.current = true;
+
+        // Ensure old doc/engine is destroyed before creating new
+        if (pdfDocRef.current) pdfDocRef.current[Symbol.dispose]();
+        if (engineRef.current) engineRef.current.destroy();
+
+        const engine = await createEngine({ wasmUrl: '/pdfium.esm.wasm' });
+        engineRef.current = engine;
+        
+        const doc = await engine.open(new Uint8Array(arrayBuffer));
+        
+        if (!active) {
+          doc[Symbol.dispose]();
+          engine.destroy();
+          return;
+        }
+
         pdfDocRef.current = doc;
         setIsPdfLoaded(true);
-        setNumPages(doc.numPages);
+        setNumPages(doc.pageCount);
         setIsLoading(false);
 
         setupPages();
       } catch (error) {
-        console.warn("PDF.js failed to load document via proxy. Triggering fallback frame...", error);
+        console.error("PDFium WASM failed to load document.", error);
         if (!active) return;
-        clearTimeout(loadTimeout);
-        triggerFallbackFrame(fileUrl);
+        setNoUrlError(true);
+        setIsLoading(false);
       }
     }
 
-    initPdfEngine().catch((err) => {
-      console.warn("PDF initialization error:", err);
-      if (active) {
-        clearTimeout(loadTimeout);
-        triggerFallbackFrame(fileUrl);
-      }
-    });
+    initPdfEngine();
 
     return () => {
       active = false;
-      if (loadTimeout) clearTimeout(loadTimeout);
       if (renderObserverRef.current) renderObserverRef.current.disconnect();
       if (activePageObserverRef.current) activePageObserverRef.current.disconnect();
+      
+      // Cleanup PDFium engine completely to free WASM memory
+      if (pdfDocRef.current) pdfDocRef.current[Symbol.dispose]();
+      if (engineRef.current) engineRef.current.destroy();
     };
-  }, [fileUrl, isUrlResolved, noUrlError, setupPages, triggerFallbackFrame]);
+  }, [fileUrl, isUrlResolved, noUrlError, setupPages]);
 
   // Handle page jump from floating bar input
   const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
     setCurrentPage(val || 1);
-    if (val >= 1 && pdfDocRef.current && val <= pdfDocRef.current.numPages) {
+    if (val >= 1 && pdfDocRef.current && val <= pdfDocRef.current.pageCount) {
       const targetWrapper = pageWrappersRef.current[val - 1];
       if (targetWrapper) {
         targetWrapper.scrollIntoView({ behavior: "smooth" });
@@ -665,73 +591,35 @@ export default function PDFReader() {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] w-screen h-screen bg-slate-950 text-slate-100 flex flex-col overflow-hidden select-none">
-      {/* Main Full Page Viewer Container */}
-      <div id="viewer-container" className="relative w-full h-full flex-1 overflow-hidden bg-slate-950">
-        {/* Error state if no URL was provided */}
+    <div className="fixed inset-0 z-[100] w-screen h-screen bg-white text-slate-900 flex flex-col overflow-hidden select-none">
+      <div id="viewer-container" className="relative w-full h-full flex-1 overflow-auto bg-white">
         {noUrlError && (
-          <div className="m-auto text-center text-red-400 p-5">
-            <h3 className="text-base font-bold text-red-400">No PDF URL provided</h3>
-            <p className="text-xs mt-2 text-slate-400">Please specify a valid ?file=URL parameter.</p>
+          <div className="m-auto text-center text-red-500 p-5 mt-20">
+            <h3 className="text-base font-bold text-red-500">Failed to load PDF</h3>
+            <p className="text-xs mt-2 text-slate-500">Please specify a valid URL or check the file.</p>
           </div>
         )}
 
-        {/* PDF Canvas Scroll View Area */}
-        {!useFallback && !noUrlError && (
-          <div id="pdf-scroll-view" ref={scrollViewRef}>
+        {!noUrlError && (
+          <div id="pdf-scroll-view" ref={scrollViewRef} className="h-full w-full overflow-y-auto">
             {isLoading && (
-              <div id="loading-spinner">
-                <div className="spinner"></div>
-                <p style={{ fontSize: "13px", fontWeight: 600, color: "#cbd5e1" }}>Opening Document...</p>
-                <p style={{ fontSize: "11px", color: "#94a3b8", maxWidth: "260px" }}>
-                  Rendering pages with high-precision vector engine.
+              <div id="loading-spinner" className="flex flex-col items-center justify-center h-full gap-4 text-slate-600">
+                <Loader2 className="w-8 h-8 animate-spin text-[#2053BA]" />
+                <p className="text-[13px] font-semibold text-slate-800">Initializing PDFium WASM Engine...</p>
+                <p className="text-[11px] max-w-[260px] text-center text-slate-500">
+                  Loading high-precision WebAssembly vector engine.
                 </p>
               </div>
             )}
-            <div ref={canvasContainerRef} className="w-max min-w-full mx-auto flex flex-col gap-4 items-center origin-top transition-transform duration-75" />
+            <div ref={canvasContainerRef} className="w-max min-w-full mx-auto flex flex-col items-center origin-top" />
           </div>
         )}
 
-        {/* Floating Bottom Toolbar for PDF.js Reader */}
-        {!useFallback && !noUrlError && !isLoading && isPdfLoaded && (
-          <div className="floating-bottom-bar" id="bottom-toolbar">
-            <div className="page-info">
-              <input
-                type="number"
-                id="page-num"
-                className="page-input"
-                value={currentPage || 1}
-                min={1}
-                max={numPages || 1}
-                onChange={handlePageInputChange}
-              />
-              <span className="whitespace-nowrap flex items-center gap-1">
-                / <span id="page-count">{numPages || "-"}</span>
-              </span>
-            </div>
-
-            <div className="h-4 w-[1px] bg-slate-700 mx-0.5" />
-
-            <button
-              className={`reader-btn ${fitToWidth ? "bg-[#2053BA]/80 text-white border-[#2053BA]" : ""}`}
-              onClick={handleToggleFitWidth}
-              title="Toggle Fit to Width"
-            >
-              <Maximize2 className="w-4 h-4" />
-            </button>
-            <button className="reader-btn" onClick={handleZoomOut} title="Zoom Out">
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <button className="reader-btn" onClick={handleZoomIn} title="Zoom In">
-              <ZoomIn className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Fallback Google Docs / Direct Iframe Viewer Container */}
-        {useFallback && !noUrlError && (
-          <div id="fallback-container">
-            <iframe id="fallback-frame" src={fallbackSrc} title="PDF Document Viewer" />
+        {!noUrlError && !isLoading && isPdfLoaded && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 flex items-center bg-white/90 backdrop-blur-md border border-slate-200 px-4 py-1.5 rounded-full shadow-sm z-[150]">
+            <span className="text-sm font-medium text-slate-700">
+              {currentPage} / {numPages || "-"}
+            </span>
           </div>
         )}
       </div>
