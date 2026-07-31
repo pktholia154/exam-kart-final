@@ -261,12 +261,12 @@ export default function CartPage() {
   };
 
   return (
-    <main className="min-h-screen pt-4 pb-24 max-w-md md:max-w-2xl mx-auto px-4 bg-gray-50">
+    <main className="min-h-screen pt-4 pb-24 max-w-md md:max-w-2xl mx-auto px-4 bg-white">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.back()} className="p-2 bg-white rounded-full shadow-sm">
+        <button onClick={() => router.back()} className="p-2 bg-gray-50 rounded-full">
           <ArrowLeft className="w-5 h-5 text-gray-700" />
         </button>
-        <h1 className="text-xl font-black text-gray-900 tracking-tight">Your Cart</h1>
+        <h1 className="text-lg font-black text-gray-900 tracking-tight">Your Cart</h1>
       </div>
 
       {errorMessage && (
@@ -282,7 +282,7 @@ export default function CartPage() {
       )}
 
       {items.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm p-8 flex flex-col items-center justify-center text-center">
+        <div className="py-12 flex flex-col items-center justify-center text-center">
           <ShoppingCart className="w-12 h-12 text-gray-300 mb-4" />
           <h2 className="text-sm font-bold text-gray-800">Your cart is empty</h2>
           <p className="text-xs text-gray-500 mt-1 mb-6">Looks like you haven&apos;t added any books yet.</p>
@@ -291,16 +291,16 @@ export default function CartPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Referral Banner in Cart */}
           {appliedReferralCode && isFirstPurchase && (
-            <div className="bg-gradient-to-r from-purple-950 via-[#8720BA] to-[#2053BA] text-white p-3.5 rounded-2xl shadow-md flex items-center justify-between">
+            <div className="bg-purple-50 text-purple-900 p-3.5 rounded-2xl flex items-center justify-between border border-purple-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
-                  <Gift className="w-4 h-4 text-white" />
+                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
+                  <Gift className="w-4 h-4 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-200 block">
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-purple-600 block">
                     Referral Discount Applied!
                   </span>
                   <p className="text-xs font-black">
@@ -308,24 +308,24 @@ export default function CartPage() {
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-extrabold bg-white/20 px-2 py-1 rounded-lg">
+              <span className="text-xs font-extrabold bg-purple-100 px-2 py-1 rounded-lg">
                 -₹{referralDiscountAmount.toFixed(2)}
               </span>
             </div>
           )}
 
           {/* Cart items list */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
+          <div className="divide-y divide-gray-100">
             {items.map((item) => (
-              <div key={item.book.id || item.book.seoslug} className="p-4 flex gap-4 items-start">
+              <div key={item.book.id || item.book.seoslug} className="py-4 flex gap-4 items-start">
                 <ProceduralCover title={item.book.title} className="w-16 rounded shadow-sm shrink-0" />
                 <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch">
                   <div>
-                    <h3 className="text-sm font-bold text-gray-900 leading-tight mb-1">{item.book.title}</h3>
-                    <p className="text-xs text-gray-500 line-clamp-1">{item.book.publisher}</p>
+                    <h3 className="text-[13px] font-bold text-gray-900 leading-tight mb-1">{item.book.title}</h3>
+                    <p className="text-[11px] text-gray-500 line-clamp-1">{item.book.publisher}</p>
                   </div>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="font-bold text-[#2053BA]">₹{item.book.buyprice}</span>
+                    <span className="font-bold text-[#2053BA] text-sm">₹{item.book.buyprice}</span>
                     <button 
                       onClick={() => removeFromCart(item.book.id || item.book.seoslug)}
                       className="text-red-500 bg-red-50 p-1.5 rounded-lg active:scale-95 transition-transform"
@@ -340,19 +340,19 @@ export default function CartPage() {
 
           {/* Store Credit Option */}
           {walletBalance > 0 && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
+            <div className="bg-amber-50 rounded-2xl p-4 flex items-center justify-between border border-amber-100">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
                   <Wallet className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h4 className="text-xs font-extrabold text-amber-900">Use Store Credit</h4>
-                    <span className="text-[10px] font-bold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded">
+                    <h4 className="text-[11px] font-extrabold text-amber-900">Use Store Credit</h4>
+                    <span className="text-[9px] font-bold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded">
                       ₹{walletBalance.toFixed(2)} available
                     </span>
                   </div>
-                  <p className="text-[11px] text-amber-700">Apply credit earned from referring friends</p>
+                  <p className="text-[10px] text-amber-700">Apply credit earned from referring friends</p>
                 </div>
               </div>
 
@@ -369,46 +369,46 @@ export default function CartPage() {
           )}
 
           {/* Bill Summary */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-            <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider mb-3">Order Summary</h3>
+          <div className="pt-2">
+            <h3 className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider mb-3">Order Summary</h3>
 
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">Subtotal ({totalItems} items)</span>
-              <span className="text-sm font-bold text-gray-900">₹{totalPrice.toFixed(2)}</span>
+              <span className="text-xs text-gray-600">Subtotal ({totalItems} items)</span>
+              <span className="text-xs font-bold text-gray-900">₹{totalPrice.toFixed(2)}</span>
             </div>
 
             {referralDiscountAmount > 0 && (
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-green-700 flex items-center gap-1 font-medium">
+                <span className="text-xs text-green-700 flex items-center gap-1 font-medium">
                   <Sparkles className="w-3.5 h-3.5" /> Referral Discount (15%)
                 </span>
-                <span className="text-sm font-bold text-green-600">-₹{referralDiscountAmount.toFixed(2)}</span>
+                <span className="text-xs font-bold text-green-600">-₹{referralDiscountAmount.toFixed(2)}</span>
               </div>
             )}
 
             {walletCreditToUse > 0 && (
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-amber-700 flex items-center gap-1 font-medium">
+                <span className="text-xs text-amber-700 flex items-center gap-1 font-medium">
                   <Wallet className="w-3.5 h-3.5" /> Store Credit Applied
                 </span>
-                <span className="text-sm font-bold text-amber-600">-₹{walletCreditToUse.toFixed(2)}</span>
+                <span className="text-xs font-bold text-amber-600">-₹{walletCreditToUse.toFixed(2)}</span>
               </div>
             )}
 
             <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-2 mb-6">
               <div>
-                <span className="text-base font-black text-gray-900 block">Total Payable</span>
+                <span className="text-sm font-black text-gray-900 block">Total Payable</span>
                 {appliedReferralCode && (
                   <span className="text-[10px] text-gray-400">Referral reward will unlock for referrer in 7 days</span>
                 )}
               </div>
-              <span className="text-xl font-black text-[#2053BA]">₹{finalPayableTotal.toFixed(2)}</span>
+              <span className="text-lg font-black text-[#2053BA]">₹{finalPayableTotal.toFixed(2)}</span>
             </div>
 
             <button
               onClick={handleCheckout}
               disabled={buying}
-              className="w-full bg-[#2053BA] text-white py-3.5 rounded-xl text-sm font-bold active:scale-[0.98] transition-transform shadow-md shadow-[#2053BA]/20 flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full bg-[#2053BA] text-white py-3 rounded-xl text-xs font-bold active:scale-[0.98] transition-transform shadow-sm flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {buying ? (
                 <>

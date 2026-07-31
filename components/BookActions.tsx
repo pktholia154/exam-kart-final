@@ -314,7 +314,8 @@ export function BookActions({ book }: BookActionsProps) {
             <button
               onClick={handleBuy}
               disabled={buying || checkingPurchase}
-              className="flex-[1.5] w-full bg-white text-black border border-black hover:bg-gray-50 py-2.5 px-2 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-70 cursor-pointer"
+              className="flex-[1.5] w-full bg-[#ffa13b] text-black hover:bg-[#ff9124] py-2.5 px-2 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-70 cursor-pointer border-none"
+              style={{ backgroundColor: "#ffa13b", color: "#000000" }}
             >
               {buying ? (
                 <>

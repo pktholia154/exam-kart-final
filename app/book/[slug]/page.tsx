@@ -315,7 +315,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
               </p>
             )}
             {book.fullDescription && book.fullDescription !== book.seoDescription && (
-              <div className="text-gray-600 leading-relaxed font-sans prose max-w-none prose-p:text-[12px] prose-p:m-0 prose-headings:text-gray-900 prose-headings:m-0 prose-headings:mb-1 prose-h1:text-[15px] prose-h2:text-[14px] prose-h3:text-[13px] prose-ul:text-[12px] prose-ul:m-0 prose-ol:text-[12px] prose-ol:m-0 prose-li:text-[12px] prose-li:m-0 space-y-2">
+              <div className="text-gray-600 leading-relaxed font-sans prose max-w-none prose-p:text-[13.5px] prose-p:m-0 prose-headings:text-gray-900 prose-headings:m-0 prose-headings:mb-1 prose-h1:text-[16.5px] prose-h2:text-[15px] prose-h3:text-[14px] prose-ul:text-[13.5px] prose-ul:m-0 prose-ol:text-[13.5px] prose-ol:m-0 prose-li:text-[13.5px] prose-li:m-0 space-y-2">
                 <Markdown remarkPlugins={[remarkBreaks]}>{book.fullDescription.replace(/\\n/g, '\n')}</Markdown>
               </div>
             )}
