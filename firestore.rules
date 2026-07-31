@@ -74,6 +74,30 @@ service cloud.firestore {
              data.createdAt is string && data.createdAt.size() <= 100 &&
              data.updatedAt is string && data.updatedAt.size() <= 100;
     }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'referral_code', 'wallet_balance', 'created_at']) &&
+             data.id is string && data.id.size() <= 128 && data.id == request.auth.uid &&
+             data.referral_code is string && data.referral_code.size() <= 32 &&
+             data.wallet_balance is number &&
+             data.created_at is string && data.created_at.size() <= 100;
+    }
+
+    function isValidReferral(data) {
+      return data.keys().hasAll(['referrer_user_id', 'referred_user_id', 'status', 'created_at']) &&
+             data.referrer_user_id is string && data.referrer_user_id.size() <= 128 &&
+             data.referred_user_id is string && data.referred_user_id.size() <= 128 &&
+             data.status is string && (data.status == 'clicked' || data.status == 'signed_up' || data.status == 'pending' || data.status == 'rewarded' || data.status == 'rejected') &&
+             data.created_at is string && data.created_at.size() <= 100;
+    }
+
+    function isValidWalletTransaction(data) {
+      return data.keys().hasAll(['user_id', 'amount', 'type', 'created_at']) &&
+             data.user_id is string && data.user_id.size() <= 128 &&
+             data.amount is number &&
+             data.type is string && (data.type == 'referral_credit' || data.type == 'purchase_debit' || data.type == 'reversal') &&
+             data.created_at is string && data.created_at.size() <= 100;
+    }
     
     match /categories/{categoryId} {
       allow get: if isValidId(categoryId);
@@ -104,6 +128,25 @@ service cloud.firestore {
       allow create: if isSignedIn() && isValidId(reviewId) && isValidReview(incoming());
       allow update: if isSignedIn() && isValidId(reviewId) && isValidReview(incoming()) && existing().userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'comment', 'updatedAt']);
       allow delete: if isSignedIn() && isValidId(reviewId) && existing().userId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId);
+      allow list: if isSignedIn();
+      allow create, update: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && isValidUser(incoming());
+    }
+
+    match /referrals/{referralId} {
+      allow get: if isSignedIn() && isValidId(referralId);
+      allow list: if isSignedIn() && (resource.data.referrer_user_id == request.auth.uid || resource.data.referred_user_id == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(referralId) && isValidReferral(incoming());
+      allow update: if isSignedIn() && isValidId(referralId);
+    }
+
+    match /wallet_transactions/{transactionId} {
+      allow get: if isSignedIn() && isValidId(transactionId);
+      allow list: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(transactionId) && isValidWalletTransaction(incoming());
     }
   }
 }

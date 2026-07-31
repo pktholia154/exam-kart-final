@@ -5,13 +5,27 @@ import { useAuth } from "@/lib/auth-context";
 import { signInWithPopup, googleProvider, auth, db, handleFirestoreError, OperationType } from "@/lib/firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { ProceduralCover } from "@/components/ProceduralCover";
-import { Download, BookOpen, Clock, MoreVertical, FileText } from "lucide-react";
+import { Download, BookOpen, Clock, MoreVertical, FileText, CheckCircle2, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { savePdfOffline, isPdfOffline, removePdfOffline } from "@/lib/offline-storage";
 
 export default function PurchasedPage() {
   const { user, loading: authLoading } = useAuth();
   const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [offlineStatus, setOfflineStatus] = useState<Record<string, boolean>>({});
+  const [downloading, setDownloading] = useState<Record<string, boolean>>({});
+
+  const checkOfflineStatus = async (purchasedItems: any[]) => {
+    const status: Record<string, boolean> = {};
+    for (const item of purchasedItems) {
+      const bookKey = item.bookId || item.seoslug;
+      if (bookKey) {
+        status[bookKey] = await isPdfOffline(bookKey);
+      }
+    }
+    setOfflineStatus(status);
+  };
 
   useEffect(() => {
     const fetchPurchases = async () => {
@@ -26,6 +40,7 @@ export default function PurchasedPage() {
         // sorting by purchasedAt manually since we didn't create a composite index
         data.sort((a: any, b: any) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime());
         setPurchases(data);
+        await checkOfflineStatus(data);
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, 'purchases');
       } finally {
@@ -36,33 +51,54 @@ export default function PurchasedPage() {
   }, [user]);
 
   const handleDownloadOffline = async (purchase: any) => {
+    const bookKey = purchase.bookId || purchase.seoslug;
+    if (!bookKey) return;
+
+    if (offlineStatus[bookKey]) {
+      // Remove offline download
+      if (confirm("Remove offline download?")) {
+        try {
+          await removePdfOffline(bookKey);
+          setOfflineStatus(prev => ({ ...prev, [bookKey]: false }));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      return;
+    }
+
     try {
+      setDownloading(prev => ({ ...prev, [bookKey]: true }));
       let pdfurl = purchase.pdfurl;
       if (!pdfurl) {
-        const bookKey = purchase.bookId || purchase.seoslug;
-        if (bookKey) {
-          const docRef = doc(db, "books", bookKey);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            pdfurl = docSnap.data().pdfurl;
-          } else {
-            const q = query(collection(db, "books"), where("seoslug", "==", bookKey));
-            const qSnap = await getDocs(q);
-            if (!qSnap.empty) {
-              pdfurl = qSnap.docs[0].data().pdfurl;
-            }
+        const docRef = doc(db, "books", bookKey);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          pdfurl = docSnap.data().pdfurl;
+        } else {
+          const q = query(collection(db, "books"), where("seoslug", "==", bookKey));
+          const qSnap = await getDocs(q);
+          if (!qSnap.empty) {
+            pdfurl = qSnap.docs[0].data().pdfurl;
           }
         }
       }
 
       if (pdfurl) {
-        window.open(pdfurl, "_blank");
+        const proxyUrl = "/api/pdf?url=" + encodeURIComponent(pdfurl);
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error("Failed to fetch PDF");
+        const arrayBuffer = await response.arrayBuffer();
+        await savePdfOffline(bookKey, arrayBuffer);
+        setOfflineStatus(prev => ({ ...prev, [bookKey]: true }));
       } else {
         alert("PDF download URL is not available for this book in database.");
       }
     } catch (err) {
-      console.error("Error fetching offline PDF link:", err);
-      alert("Failed to retrieve download link from database.");
+      console.error("Error downloading offline PDF:", err);
+      alert("Failed to download book for offline viewing.");
+    } finally {
+      setDownloading(prev => ({ ...prev, [bookKey]: false }));
     }
   };
 
@@ -159,17 +195,39 @@ export default function PurchasedPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Link 
-                      href={`/read/${purchase.bookId || purchase.seoslug}?type=full${purchase.pdfurl ? `&url=${encodeURIComponent(purchase.pdfurl)}` : ""}`} 
-                      className="flex-1 bg-[#2053BA] hover:bg-[#301a9c] text-white py-1.5 px-3 rounded-lg text-[11px] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 shadow-2xs"
-                    >
-                      <BookOpen className="w-3 h-3" /> Read
-                    </Link>
+                    {offlineStatus[purchase.bookId || purchase.seoslug] ? (
+                      <Link 
+                        href={`/read/${purchase.bookId || purchase.seoslug}?type=offline`} 
+                        className="flex-1 bg-[#2053BA] hover:bg-[#301a9c] text-white py-1.5 px-3 rounded-lg text-[11px] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 shadow-2xs"
+                      >
+                        <BookOpen className="w-3 h-3" /> Read Offline
+                      </Link>
+                    ) : (
+                      <Link 
+                        href={`/read/${purchase.bookId || purchase.seoslug}?type=full${purchase.pdfurl ? `&url=${encodeURIComponent(purchase.pdfurl)}` : ""}`} 
+                        className="flex-1 bg-[#2053BA] hover:bg-[#301a9c] text-white py-1.5 px-3 rounded-lg text-[11px] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 shadow-2xs"
+                      >
+                        <BookOpen className="w-3 h-3" /> Read Online
+                      </Link>
+                    )}
                     <button 
                       onClick={() => handleDownloadOffline(purchase)}
-                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-1.5 px-3 rounded-lg text-[11px] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 border border-gray-200/80"
+                      disabled={downloading[purchase.bookId || purchase.seoslug]}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-1.5 px-3 rounded-lg text-[11px] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 border border-gray-200/80 disabled:opacity-50"
                     >
-                      <Download className="w-3 h-3 text-[#2053BA]" /> Offline
+                      {downloading[purchase.bookId || purchase.seoslug] ? (
+                        <>
+                          <Loader2 className="w-3 h-3 text-[#2053BA] animate-spin" /> Saving...
+                        </>
+                      ) : offlineStatus[purchase.bookId || purchase.seoslug] ? (
+                        <>
+                          <Trash2 className="w-3 h-3 text-red-500" /> Remove
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-3 h-3 text-[#2053BA]" /> Download
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

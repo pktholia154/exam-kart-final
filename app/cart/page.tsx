@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db, signInWithPopup, googleProvider, auth } from "@/lib/firebase";
-import { ShoppingCart, Loader2, CreditCard, Trash2, ArrowLeft } from "lucide-react";
+import { ShoppingCart, Loader2, CreditCard, Trash2, ArrowLeft, Gift, Wallet, CheckCircle2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { ProceduralCover } from "@/components/ProceduralCover";
-import Image from "next/image";
+import { getReferralCodeCookie, deductWalletCredit, processReferralOrderReward } from "@/lib/referral-service";
 
 declare global {
   interface Window {
@@ -19,10 +19,54 @@ declare global {
 
 export default function CartPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { items, removeFromCart, clearCart, totalPrice, totalItems } = useCart();
   const [buying, setBuying] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const [useWalletCredit, setUseWalletCredit] = useState(true);
+  const [appliedReferralCode, setAppliedReferralCode] = useState<string | null>(null);
+  const [isFirstPurchase, setIsFirstPurchase] = useState(true);
+
+  // Read referral code from cookie/profile
+  useEffect(() => {
+    const code = getReferralCodeCookie() || profile?.referred_by_code;
+    if (code) {
+      // eslint-disable-next-line
+      setAppliedReferralCode(code.toUpperCase());
+    }
+  }, [profile]);
+
+  // Check if user has past purchases
+  useEffect(() => {
+    async function checkPurchases() {
+      if (!user) return;
+      try {
+        const q = query(collection(db, "purchases"), where("userId", "==", user.uid));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          setIsFirstPurchase(false);
+        }
+      } catch (err) {
+        console.warn("Error checking past purchases:", err);
+      }
+    }
+    checkPurchases();
+  }, [user]);
+
+  // 15% referral discount if referral code present and it's 1st purchase
+  const referralDiscountRate = (appliedReferralCode && isFirstPurchase) ? 0.15 : 0;
+  const referralDiscountAmount = totalPrice * referralDiscountRate;
+  const payableAfterDiscount = Math.max(0, totalPrice - referralDiscountAmount);
+
+  // Store credit calculation
+  const walletBalance = profile?.wallet_balance || 0;
+  const walletCreditToUse = (useWalletCredit && walletBalance > 0) 
+    ? Math.min(walletBalance, payableAfterDiscount) 
+    : 0;
+
+  const finalPayableTotal = Math.max(0, payableAfterDiscount - walletCreditToUse);
 
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -42,8 +86,53 @@ export default function CartPage() {
     });
   };
 
+  const handleCompleteOrderSuccess = async (orderId: string, paymentId: string, amountPaidInPaise: number) => {
+    if (!user) return;
+    
+    // 1. Add all books to purchased
+    const promises = items.map(item => 
+      addDoc(collection(db, "purchases"), {
+        userId: user.uid,
+        bookId: item.book.id || item.book.seoslug,
+        title: item.book.title,
+        seoslug: item.book.seoslug,
+        category: item.book.category,
+        orderId,
+        paymentId,
+        pdfurl: item.book.pdfurl || "",
+        purchasedAt: new Date().toISOString(),
+      })
+    );
+    await Promise.all(promises);
+
+    // 2. Deduct wallet balance if used
+    if (walletCreditToUse > 0) {
+      await deductWalletCredit({
+        userId: user.uid,
+        amountToDeduct: walletCreditToUse,
+        orderId,
+      });
+    }
+
+    // 3. Process referral reward for the referrer (20% store credit, 7-day unlock)
+    const netPaidAmountInINR = amountPaidInPaise / 100;
+    await processReferralOrderReward({
+      buyerUserId: user.uid,
+      orderId,
+      netPaidAmount: netPaidAmountInINR,
+    });
+
+    await refreshProfile();
+    clearCart();
+    setSuccessMessage("🎉 Order successful! Check your profile and library.");
+    setTimeout(() => {
+      router.push("/purchased");
+    }, 1500);
+  };
+
   const handleCheckout = async () => {
     setErrorMessage(null);
+    setSuccessMessage(null);
 
     let currentUser = user;
     if (!currentUser) {
@@ -65,6 +154,13 @@ export default function CartPage() {
     setBuying(true);
 
     try {
+      // If final payable total is 0 (covered completely by store credit)
+      if (finalPayableTotal === 0 && walletCreditToUse > 0) {
+        const fullCreditOrderId = `credit_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        await handleCompleteOrderSuccess(fullCreditOrderId, "STORE_CREDIT_PAYMENT", 0);
+        return;
+      }
+
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
         setErrorMessage("Failed to load Razorpay payment gateway.");
@@ -72,7 +168,7 @@ export default function CartPage() {
         return;
       }
 
-      const amountInPaise = Math.max(100, Math.round(totalPrice * 100));
+      const amountInPaise = Math.max(100, Math.round(finalPayableTotal * 100));
       const bookIds = items.map(i => i.book.id || i.book.seoslug).join(",");
 
       const orderResponse = await fetch("/api/create-order", {
@@ -85,6 +181,8 @@ export default function CartPage() {
           notes: {
             bookIds,
             userId: currentUser.uid,
+            referralCode: appliedReferralCode || "",
+            walletCreditUsed: walletCreditToUse,
           },
         }),
       });
@@ -119,32 +217,18 @@ export default function CartPage() {
             const verifyData = await verifyResponse.json();
 
             if (verifyResponse.ok && verifyData.success) {
-              // Add all books to purchased
-              const promises = items.map(item => 
-                addDoc(collection(db, "purchases"), {
-                  userId: currentUser.uid,
-                  bookId: item.book.id || item.book.seoslug,
-                  title: item.book.title,
-                  seoslug: item.book.seoslug,
-                  category: item.book.category,
-                  orderId: response.razorpay_order_id,
-                  paymentId: response.razorpay_payment_id,
-                  pdfurl: item.book.pdfurl || "",
-                  purchasedAt: new Date().toISOString(),
-                })
+              await handleCompleteOrderSuccess(
+                response.razorpay_order_id,
+                response.razorpay_payment_id,
+                orderData.amount
               );
-
-              await Promise.all(promises);
-
-              clearCart();
-              router.push("/purchased");
             } else {
               setErrorMessage(verifyData.error || "Payment signature verification failed.");
+              setBuying(false);
             }
           } catch (verifyErr: any) {
             console.error("Error verifying payment signature:", verifyErr);
             setErrorMessage("An error occurred while verifying your payment signature.");
-          } finally {
             setBuying(false);
           }
         },
@@ -191,6 +275,12 @@ export default function CartPage() {
         </div>
       )}
 
+      {successMessage && (
+        <div className="bg-green-50 text-green-700 p-3 rounded-xl text-xs font-bold mb-4 border border-green-200 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-green-600" /> {successMessage}
+        </div>
+      )}
+
       {items.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-sm p-8 flex flex-col items-center justify-center text-center">
           <ShoppingCart className="w-12 h-12 text-gray-300 mb-4" />
@@ -202,6 +292,29 @@ export default function CartPage() {
         </div>
       ) : (
         <div className="space-y-4">
+          {/* Referral Banner in Cart */}
+          {appliedReferralCode && isFirstPurchase && (
+            <div className="bg-gradient-to-r from-purple-950 via-[#8720BA] to-[#2053BA] text-white p-3.5 rounded-2xl shadow-md flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                  <Gift className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-200 block">
+                    Referral Discount Applied!
+                  </span>
+                  <p className="text-xs font-black">
+                    15% OFF from code <span className="underline">{appliedReferralCode}</span>
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-extrabold bg-white/20 px-2 py-1 rounded-lg">
+                -₹{referralDiscountAmount.toFixed(2)}
+              </span>
+            </div>
+          )}
+
+          {/* Cart items list */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
             {items.map((item) => (
               <div key={item.book.id || item.book.seoslug} className="p-4 flex gap-4 items-start">
@@ -225,18 +338,71 @@ export default function CartPage() {
             ))}
           </div>
 
+          {/* Store Credit Option */}
+          {walletBalance > 0 && (
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0">
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-xs font-extrabold text-amber-900">Use Store Credit</h4>
+                    <span className="text-[10px] font-bold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded">
+                      ₹{walletBalance.toFixed(2)} available
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-700">Apply credit earned from referring friends</p>
+                </div>
+              </div>
+
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useWalletCredit}
+                  onChange={(e) => setUseWalletCredit(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2053BA]"></div>
+              </label>
+            </div>
+          )}
+
+          {/* Bill Summary */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider mb-3">Order Summary</h3>
+
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-600">Subtotal ({totalItems} items)</span>
               <span className="text-sm font-bold text-gray-900">₹{totalPrice.toFixed(2)}</span>
             </div>
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
-              <span className="text-sm text-gray-600">Discount</span>
-              <span className="text-sm font-bold text-green-600">-₹0.00</span>
-            </div>
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-base font-black text-gray-900">Total</span>
-              <span className="text-xl font-black text-[#2053BA]">₹{totalPrice.toFixed(2)}</span>
+
+            {referralDiscountAmount > 0 && (
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-green-700 flex items-center gap-1 font-medium">
+                  <Sparkles className="w-3.5 h-3.5" /> Referral Discount (15%)
+                </span>
+                <span className="text-sm font-bold text-green-600">-₹{referralDiscountAmount.toFixed(2)}</span>
+              </div>
+            )}
+
+            {walletCreditToUse > 0 && (
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-amber-700 flex items-center gap-1 font-medium">
+                  <Wallet className="w-3.5 h-3.5" /> Store Credit Applied
+                </span>
+                <span className="text-sm font-bold text-amber-600">-₹{walletCreditToUse.toFixed(2)}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-2 mb-6">
+              <div>
+                <span className="text-base font-black text-gray-900 block">Total Payable</span>
+                {appliedReferralCode && (
+                  <span className="text-[10px] text-gray-400">Referral reward will unlock for referrer in 7 days</span>
+                )}
+              </div>
+              <span className="text-xl font-black text-[#2053BA]">₹{finalPayableTotal.toFixed(2)}</span>
             </div>
 
             <button
@@ -246,7 +412,11 @@ export default function CartPage() {
             >
               {buying ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+                  <Loader2 className="w-4 h-4 animate-spin" /> Processing Order...
+                </>
+              ) : finalPayableTotal === 0 ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4" /> Place Order with Store Credit (₹0)
                 </>
               ) : (
                 <>
@@ -260,3 +430,4 @@ export default function CartPage() {
     </main>
   );
 }
+

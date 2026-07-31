@@ -79,6 +79,52 @@
         "updatedAt": { "type": "string", "maxLength": 100 }
       },
       "required": ["bookId", "userId", "userName", "rating", "comment", "createdAt", "updatedAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile with referral code and wallet store credit balance",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "referral_code": { "type": "string", "maxLength": 32 },
+        "referred_by_user_id": { "type": "string", "maxLength": 128 },
+        "referred_by_code": { "type": "string", "maxLength": 32 },
+        "wallet_balance": { "type": "number" },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 128 },
+        "created_at": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "referral_code", "wallet_balance", "created_at"]
+    },
+    "Referral": {
+      "title": "Referral",
+      "description": "Referral tracking record",
+      "type": "object",
+      "properties": {
+        "referrer_user_id": { "type": "string", "maxLength": 128 },
+        "referred_user_id": { "type": "string", "maxLength": 128 },
+        "order_id": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["clicked", "signed_up", "pending", "rewarded", "rejected"] },
+        "reward_amount": { "type": "number" },
+        "purchase_amount": { "type": "number" },
+        "created_at": { "type": "string", "maxLength": 100 },
+        "reward_available_at": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["referrer_user_id", "referred_user_id", "status", "created_at"]
+    },
+    "WalletTransaction": {
+      "title": "WalletTransaction",
+      "description": "Ledger entry for user wallet credit/debit",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "maxLength": 128 },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["referral_credit", "purchase_debit", "reversal"] },
+        "description": { "type": "string", "maxLength": 500 },
+        "referral_id": { "type": "string", "maxLength": 128 },
+        "created_at": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["user_id", "amount", "type", "created_at"]
     }
   },
   "firestore": {
@@ -97,6 +143,18 @@
     "reviews/{reviewId}": {
       "schema": { "$ref": "#/entities/Review" },
       "description": "Reviews collection"
+    },
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Users profile collection"
+    },
+    "referrals/{referralId}": {
+      "schema": { "$ref": "#/entities/Referral" },
+      "description": "Referrals tracking collection"
+    },
+    "wallet_transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/WalletTransaction" },
+      "description": "Wallet transaction ledger collection"
     }
   }
 }

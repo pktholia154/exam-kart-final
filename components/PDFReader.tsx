@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { fetchFirestoreBookBySlugOrId } from "@/lib/books-store";
+import { getPdfOffline } from "@/lib/offline-storage";
 
 import { createEngine, PdfEngine, PdfDocument } from "clawpdf/browser";
 
@@ -59,6 +60,14 @@ export default function PDFReader() {
     let active = true;
 
     async function resolveUrl() {
+      if (readType === "offline") {
+         if (active) {
+            setIsUrlResolved(true);
+            setFileUrl("offline");
+         }
+         return;
+      }
+
       let firestoreUrl = "";
 
       if (decodedBookId) {
@@ -119,8 +128,9 @@ export default function PDFReader() {
       }
 
       // High-DPI (Retina/Mobile) super-sampling for crystal clear ultra-sharp text
-      const dpr = Math.max(window.devicePixelRatio || 1, 2.5);
-      const targetScale = renderScale * dpr;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2.0);
+      let targetScale = renderScale * dpr;
+      if (targetScale > 4.0) targetScale = 4.0;
 
       // Pre-calculate aspects for instant CSS updates to prevent layout shifts
       const aspectWidth = Math.floor(unscaledWidth * renderScale);
@@ -293,11 +303,11 @@ export default function PDFReader() {
       // 2. Reset render states to force vector clarity at new scale
       pageRenderStatesRef.current.fill(false);
 
-      // 3. Immediately re-render currently visible pages
+      // 3. Immediately re-render currently visible pages (conservative bounds to prevent memory crash)
       pageWrappersRef.current.forEach((wrapper, index) => {
         if (wrapper) {
           const rect = wrapper.getBoundingClientRect();
-          if (rect.top < window.innerHeight + 800 && rect.bottom > -800) {
+          if (rect.top < window.innerHeight + 200 && rect.bottom > -200) {
             const pageNum = index + 1;
             const canvasEl = pageCanvasesRef.current[index];
             if (canvasEl) {
@@ -363,7 +373,7 @@ export default function PDFReader() {
         const dist = getDistance(e.touches);
         if (initialDist > 0) {
           const rawFactor = dist / initialDist;
-          currentFactor = 1 + (rawFactor - 1) * 0.4;
+          currentFactor = 1 + (rawFactor - 1) * 0.15;
           const targetScale = Math.min(Math.max(startScale * currentFactor, 0.6), 4.0);
 
           // Instant 60fps CSS transform feedback during pinch gesture
@@ -451,10 +461,18 @@ export default function PDFReader() {
 
     async function initPdfEngine() {
       try {
-        // Fetch ArrayBuffer directly
-        const response = await fetch(fileUrl, { mode: "cors" });
-        if (!response.ok) throw new Error("Network response not OK");
-        const arrayBuffer = await response.arrayBuffer();
+        let arrayBuffer: ArrayBuffer;
+
+        if (readType === "offline") {
+          const data = await getPdfOffline(decodedBookId);
+          if (!data) throw new Error("Offline PDF not found");
+          arrayBuffer = data;
+        } else {
+          // Fetch ArrayBuffer directly
+          const response = await fetch(fileUrl, { mode: "cors" });
+          if (!response.ok) throw new Error("Network response not OK");
+          arrayBuffer = await response.arrayBuffer();
+        }
 
         if (!active) return;
         
@@ -481,6 +499,15 @@ export default function PDFReader() {
 
         setupPages();
       } catch (fetchErr) {
+        if (readType === "offline") {
+          console.error("Failed to load offline PDF", fetchErr);
+          if (active) {
+             setNoUrlError(true);
+             setIsLoading(false);
+          }
+          return;
+        }
+
         console.warn("Direct fetch ArrayBuffer failed/CORS. Attempting proxy load...", fetchErr);
         if (!active) return;
         tryProxyLoad();
