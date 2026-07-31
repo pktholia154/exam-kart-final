@@ -114,14 +114,14 @@ export default async function Home() {
 
       <div className="px-2.5 space-y-5 mt-2.5">
         {/* Banner - Vertical height decreased by 20% */}
-        <section className="bg-gradient-to-br from-[#2053BA] via-[#2053BA] to-[#2053BA] rounded-2xl py-3.5 px-4 text-white shadow-md shadow-[#2053BA]/15 relative overflow-hidden">
-          <div className="relative z-10 w-2/3">
+        <section className="bg-gradient-to-br from-[#1e3a8a] via-[#2053BA] to-[#3b82f6] rounded-2xl py-3.5 px-4 text-white shadow-md shadow-[#2053BA]/15 relative overflow-hidden">
+          <div className="relative z-10 w-11/12">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-md text-[9px] font-extrabold uppercase tracking-wider mb-1">
               <Sparkles className="w-2.5 h-2.5 text-amber-300 fill-amber-300" /> Deal of the Day
             </span>
-            <h2 className="text-base font-bold mb-0.5 leading-tight">UPSC Prelims Masterclass</h2>
-            <p className="text-[11px] text-white/85 mb-2.5 line-clamp-2 leading-snug">
-              Complete CSAT guide with 10 years solved papers and quantitative reasoning formulas.
+            <h2 className="text-base font-bold mb-0.5 leading-tight">PDF books for All Exams</h2>
+            <p className="text-[11px] text-white/95 mb-2.5 leading-snug">
+              PDF Books for School CBSE/NCERT, Entrance exams, Govt Job Exams are available for INSTANT Download.
             </p>
             <Link
               href="/book/upsc-prelims-csat"

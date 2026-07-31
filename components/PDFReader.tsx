@@ -139,11 +139,13 @@ export default function PDFReader() {
       // Instant CSS update for this specific page
       canvas.style.width = `${aspectWidth}px`;
       canvas.style.maxWidth = "none";
-      canvas.style.height = "auto";
+      canvas.style.height = `${aspectHeight}px`;
       canvas.style.aspectRatio = `${aspectWidth} / ${aspectHeight}`;
 
       if (wrapper) {
+        wrapper.style.width = `${aspectWidth}px`;
         wrapper.style.maxWidth = `${aspectWidth}px`;
+        wrapper.style.height = `${aspectHeight}px`;
         wrapper.style.aspectRatio = `${aspectWidth} / ${aspectHeight}`;
       }
 
@@ -192,6 +194,7 @@ export default function PDFReader() {
     // Get page 1 viewport to calculate initial page aspect ratio for placeholder wrappers
     let sampleAspect = "1 / 1.414"; // Standard A4 default
     let initialAspectWidth = 0;
+    let initialAspectHeight = 0;
     try {
       const page1 = doc.page(1);
       let initialScale = scaleRef.current;
@@ -201,6 +204,7 @@ export default function PDFReader() {
       }
       sampleAspect = `${page1.width} / ${page1.height}`;
       initialAspectWidth = Math.floor(page1.width * initialScale);
+      initialAspectHeight = Math.floor(page1.height * initialScale);
     } catch (e) {
       console.warn("Could not inspect page 1 viewport:", e);
     }
@@ -242,15 +246,18 @@ export default function PDFReader() {
       wrapper.className = "pdf-page-wrapper";
       wrapper.setAttribute("data-page-num", i.toString());
       wrapper.style.aspectRatio = sampleAspect;
-      if (initialAspectWidth > 0) {
+      if (initialAspectWidth > 0 && initialAspectHeight > 0) {
+        wrapper.style.width = `${initialAspectWidth}px`;
         wrapper.style.maxWidth = `${initialAspectWidth}px`;
+        wrapper.style.height = `${initialAspectHeight}px`;
       }
 
       const canvas = document.createElement("canvas");
       canvas.className = "pdf-page-canvas";
       canvas.setAttribute("data-page-num", i.toString());
-      if (initialAspectWidth > 0) {
+      if (initialAspectWidth > 0 && initialAspectHeight > 0) {
         canvas.style.width = `${initialAspectWidth}px`;
+        canvas.style.height = `${initialAspectHeight}px`;
         canvas.style.aspectRatio = sampleAspect;
       }
 
@@ -271,32 +278,40 @@ export default function PDFReader() {
     if (!doc) return;
 
     try {
-      const page1 = doc.page(1);
-
-      let renderScale = scaleRef.current;
       const container = scrollViewRef.current;
-      const availableWidth = container ? Math.max(container.clientWidth - 24, 280) : window.innerWidth - 24;
+      const availableWidth = container
+        ? Math.max(container.clientWidth - 24, 280)
+        : window.innerWidth - 24;
 
-      if (fitToWidthRef.current && availableWidth > 0) {
-        renderScale = availableWidth / page1.width;
-      }
+      // 1. Immediately update each page using its own dimensions.
+      // This avoids layout jumps when a PDF contains mixed page sizes or rotations.
+      pageWrappersRef.current.forEach((wrapper, index) => {
+        const canvas = pageCanvasesRef.current[index];
+        if (!wrapper || !canvas) return;
 
-      const aspectWidth = Math.floor(page1.width * renderScale);
-      const aspectHeight = Math.floor(page1.height * renderScale);
-      const sampleAspect = `${aspectWidth} / ${aspectHeight}`;
+        try {
+          const page = doc.page(index + 1);
+          let renderScale = scaleRef.current;
 
-      // 1. Immediately update CSS on all wrappers and canvases for instant response
-      pageWrappersRef.current.forEach((wrapper) => {
-        if (wrapper) {
+          if (fitToWidthRef.current && availableWidth > 0) {
+            renderScale = availableWidth / page.width;
+          }
+
+          const aspectWidth = Math.floor(page.width * renderScale);
+          const aspectHeight = Math.floor(page.height * renderScale);
+          const pageAspect = `${aspectWidth} / ${aspectHeight}`;
+
+          wrapper.style.width = `${aspectWidth}px`;
           wrapper.style.maxWidth = `${aspectWidth}px`;
-          wrapper.style.aspectRatio = sampleAspect;
-        }
-      });
+          wrapper.style.height = `${aspectHeight}px`;
+          wrapper.style.aspectRatio = pageAspect;
 
-      pageCanvasesRef.current.forEach((canvas) => {
-        if (canvas) {
           canvas.style.width = `${aspectWidth}px`;
-          canvas.style.aspectRatio = sampleAspect;
+          canvas.style.maxWidth = "none";
+          canvas.style.height = `${aspectHeight}px`;
+          canvas.style.aspectRatio = pageAspect;
+        } catch (pageError) {
+          console.warn(`Could not resize page ${index + 1}:`, pageError);
         }
       });
 
@@ -339,97 +354,234 @@ export default function PDFReader() {
     applyZoom();
   }, [applyZoom]);
 
-  // Touch Pinch-to-Zoom Gesture Handler for Mobile Devices (Chrome PDFium feel)
+  // Touch Pinch-to-Zoom Gesture Handler for Mobile Devices (stable and finger-anchored)
   useEffect(() => {
     const container = scrollViewRef.current;
-    if (!container) return;
+    const content = canvasContainerRef.current;
+    if (!container || !content) return;
 
-    let initialDist = 0;
-    let startScale = scaleRef.current;
+    const MIN_SCALE = 0.6;
+    const MAX_SCALE = 4.0;
+    const PINCH_SENSITIVITY = 0.72;
+    const SMOOTHING = 0.3;
+    const DEAD_ZONE = 0.003;
+
     let isPinching = false;
-    let currentFactor = 1;
+    let animationFrame = 0;
+    let wheelFrame = 0;
 
-    const getDistance = (touches: TouchList) => {
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      return Math.hypot(dx, dy);
+    let startDistance = 0;
+    let startScale = scaleRef.current;
+    let previewScale = startScale;
+    let targetScale = startScale;
+
+    let startMidpoint = { x: 0, y: 0 };
+    let currentMidpoint = { x: 0, y: 0 };
+    let transformOrigin = { x: 0, y: 0 };
+
+    let anchorPage: HTMLDivElement | null = null;
+    let anchorRatioX = 0.5;
+    let anchorRatioY = 0.5;
+    let previousOverflowAnchor = "";
+
+    const clampScale = (value: number) =>
+      Math.min(MAX_SCALE, Math.max(MIN_SCALE, value));
+
+    const getTouchMetrics = (touches: TouchList) => {
+      const first = touches[0];
+      const second = touches[1];
+      const dx = second.clientX - first.clientX;
+      const dy = second.clientY - first.clientY;
+
+      return {
+        distance: Math.hypot(dx, dy),
+        midpoint: {
+          x: (first.clientX + second.clientX) / 2,
+          y: (first.clientY + second.clientY) / 2,
+        },
+      };
+    };
+
+    const renderPinchPreview = () => {
+      animationFrame = 0;
+      if (!isPinching) return;
+
+      const relativeScale = previewScale / startScale;
+      const translateX = currentMidpoint.x - startMidpoint.x;
+      const translateY = currentMidpoint.y - startMidpoint.y;
+
+      content.style.transformOrigin = `${transformOrigin.x}px ${transformOrigin.y}px`;
+      content.style.transform =
+        `translate3d(${translateX}px, ${translateY}px, 0) ` +
+        `scale(${relativeScale})`;
+    };
+
+    const schedulePinchPreview = () => {
+      if (animationFrame !== 0) return;
+      animationFrame = requestAnimationFrame(renderPinchPreview);
     };
 
     const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        isPinching = true;
-        initialDist = getDistance(e.touches);
-        startScale = scaleRef.current;
-        currentFactor = 1;
-        setFitToWidth(false);
-        fitToWidthRef.current = false;
+      if (e.touches.length !== 2) return;
+
+      e.preventDefault();
+
+      const metrics = getTouchMetrics(e.touches);
+      isPinching = true;
+      startDistance = Math.max(metrics.distance, 1);
+      startScale = scaleRef.current;
+      previewScale = startScale;
+      targetScale = startScale;
+      startMidpoint = metrics.midpoint;
+      currentMidpoint = metrics.midpoint;
+
+      setFitToWidth(false);
+      fitToWidthRef.current = false;
+
+      const contentRect = content.getBoundingClientRect();
+      transformOrigin = {
+        x: startMidpoint.x - contentRect.left,
+        y: startMidpoint.y - contentRect.top,
+      };
+
+      anchorPage = document
+        .elementFromPoint(startMidpoint.x, startMidpoint.y)
+        ?.closest(".pdf-page-wrapper") as HTMLDivElement | null;
+
+      if (anchorPage) {
+        const pageRect = anchorPage.getBoundingClientRect();
+        if (pageRect.width > 0 && pageRect.height > 0) {
+          anchorRatioX = Math.min(
+            1,
+            Math.max(0, (startMidpoint.x - pageRect.left) / pageRect.width)
+          );
+          anchorRatioY = Math.min(
+            1,
+            Math.max(0, (startMidpoint.y - pageRect.top) / pageRect.height)
+          );
+        }
       }
+
+      previousOverflowAnchor = container.style.overflowAnchor;
+      container.style.overflowAnchor = "none";
+      content.style.transition = "none";
+      content.style.willChange = "transform";
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (isPinching && e.touches.length === 2) {
-        e.preventDefault();
-        const dist = getDistance(e.touches);
-        if (initialDist > 0) {
-          const rawFactor = dist / initialDist;
-          currentFactor = 1 + (rawFactor - 1) * 0.15;
-          const targetScale = Math.min(Math.max(startScale * currentFactor, 0.6), 4.0);
+      if (!isPinching || e.touches.length !== 2) return;
 
-          // Instant 60fps CSS transform feedback during pinch gesture
-          if (canvasContainerRef.current) {
-            const relativeFactor = targetScale / scaleRef.current;
-            canvasContainerRef.current.style.transform = `scale(${relativeFactor})`;
-            canvasContainerRef.current.style.transformOrigin = "center top";
-            canvasContainerRef.current.style.transition = "none";
-          }
-        }
+      e.preventDefault();
+
+      const metrics = getTouchMetrics(e.touches);
+      currentMidpoint = metrics.midpoint;
+
+      const distanceRatio = metrics.distance / startDistance;
+      const adjustedRatio = Math.pow(distanceRatio, PINCH_SENSITIVITY);
+      targetScale = clampScale(startScale * adjustedRatio);
+
+      const scaleDifference = targetScale - previewScale;
+      if (Math.abs(scaleDifference) >= DEAD_ZONE) {
+        previewScale += scaleDifference * SMOOTHING;
       }
+
+      schedulePinchPreview();
+    };
+
+    const finishPinch = () => {
+      if (!isPinching) return;
+
+      isPinching = false;
+
+      if (animationFrame !== 0) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = 0;
+      }
+
+      // Use the smoothed target while preventing tiny accidental scale changes.
+      const finalScale = clampScale(
+        Math.round(
+          (Math.abs(targetScale - startScale) < 0.015 ? startScale : targetScale) * 100
+        ) / 100
+      );
+
+      scaleRef.current = finalScale;
+      setScale(finalScale);
+
+      // applyZoom updates layout synchronously before its page renders complete.
+      reRenderAll();
+
+      content.style.transform = "";
+      content.style.transformOrigin = "";
+      content.style.transition = "";
+
+      // Keep the same point in the PDF underneath the fingers after zoom commits.
+      if (anchorPage?.isConnected) {
+        const newPageRect = anchorPage.getBoundingClientRect();
+        const newAnchorX = newPageRect.left + newPageRect.width * anchorRatioX;
+        const newAnchorY = newPageRect.top + newPageRect.height * anchorRatioY;
+
+        container.scrollLeft += newAnchorX - currentMidpoint.x;
+        container.scrollTop += newAnchorY - currentMidpoint.y;
+      }
+
+      container.style.overflowAnchor = previousOverflowAnchor;
+
+      requestAnimationFrame(() => {
+        content.style.willChange = "";
+      });
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       if (isPinching && e.touches.length < 2) {
-        isPinching = false;
-        if (canvasContainerRef.current) {
-          canvasContainerRef.current.style.transform = "";
-          canvasContainerRef.current.style.transformOrigin = "";
-          canvasContainerRef.current.style.transition = "";
-        }
-
-        const finalScale = Math.min(Math.max(+(startScale * currentFactor).toFixed(2), 0.6), 4.0);
-        setScale(finalScale);
-        scaleRef.current = finalScale;
-        reRenderAll();
+        finishPinch();
       }
+    };
+
+    const handleTouchCancel = () => {
+      finishPinch();
     };
 
     // Desktop trackpad / Ctrl + Wheel Pinch Zoom
     const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        setFitToWidth(false);
-        fitToWidthRef.current = false;
-        const delta = e.deltaY < 0 ? 0.1 : -0.1;
-        setScale((prev) => {
-          const next = Math.min(Math.max(+(prev + delta).toFixed(2), 0.6), 4.0);
-          scaleRef.current = next;
-          setTimeout(reRenderAll, 0);
-          return next;
-        });
-      }
+      if (!e.ctrlKey && !e.metaKey) return;
+
+      e.preventDefault();
+      setFitToWidth(false);
+      fitToWidthRef.current = false;
+
+      // Smaller increments make trackpad zoom less jumpy.
+      const delta = e.deltaY < 0 ? 0.05 : -0.05;
+
+      setScale((prev) => {
+        const next = clampScale(Math.round((prev + delta) * 100) / 100);
+        scaleRef.current = next;
+
+        if (wheelFrame === 0) {
+          wheelFrame = requestAnimationFrame(() => {
+            wheelFrame = 0;
+            reRenderAll();
+          });
+        }
+
+        return next;
+      });
     };
 
     container.addEventListener("touchstart", handleTouchStart, { passive: false });
     container.addEventListener("touchmove", handleTouchMove, { passive: false });
     container.addEventListener("touchend", handleTouchEnd);
-    container.addEventListener("touchcancel", handleTouchEnd);
+    container.addEventListener("touchcancel", handleTouchCancel);
     container.addEventListener("wheel", handleWheel, { passive: false });
 
     return () => {
+      if (animationFrame !== 0) cancelAnimationFrame(animationFrame);
+      if (wheelFrame !== 0) cancelAnimationFrame(wheelFrame);
+
       container.removeEventListener("touchstart", handleTouchStart);
       container.removeEventListener("touchmove", handleTouchMove);
       container.removeEventListener("touchend", handleTouchEnd);
-      container.removeEventListener("touchcancel", handleTouchEnd);
+      container.removeEventListener("touchcancel", handleTouchCancel);
       container.removeEventListener("wheel", handleWheel);
     };
   }, [reRenderAll]);
@@ -628,7 +780,15 @@ export default function PDFReader() {
         )}
 
         {!noUrlError && (
-          <div id="pdf-scroll-view" ref={scrollViewRef} className="h-full w-full overflow-y-auto">
+          <div
+            id="pdf-scroll-view"
+            ref={scrollViewRef}
+            className="h-full w-full overflow-auto overscroll-contain"
+            style={{
+              touchAction: "pan-x pan-y",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
             {isLoading && (
               <div id="loading-spinner" className="flex flex-col items-center justify-center h-full gap-4 text-slate-600">
                 <Loader2 className="w-8 h-8 animate-spin text-[#2053BA]" />
@@ -653,4 +813,3 @@ export default function PDFReader() {
     </div>
   );
 }
-

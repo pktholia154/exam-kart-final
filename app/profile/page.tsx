@@ -123,7 +123,7 @@ export default function ProfilePage() {
   const pendingCount = referrals.filter((r) => r.status === "pending").length;
 
   return (
-    <main className="min-h-screen pt-16 sm:pt-20 pb-20 max-w-xl mx-auto px-2.5 sm:px-4 bg-white space-y-4 text-gray-900 text-xs">
+    <main className="min-h-screen pt-4 sm:pt-6 pb-20 max-w-xl mx-auto px-2.5 sm:px-4 bg-white space-y-4 text-gray-900 text-xs">
       
       {/* 1. Header & Identity (Compact High Density) */}
       <div className="flex items-center justify-between py-2 border-b border-gray-100 gap-2">
