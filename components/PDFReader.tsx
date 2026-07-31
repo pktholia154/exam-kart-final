@@ -139,13 +139,11 @@ export default function PDFReader() {
       // Instant CSS update for this specific page
       canvas.style.width = `${aspectWidth}px`;
       canvas.style.maxWidth = "none";
-      canvas.style.height = `${aspectHeight}px`;
+      canvas.style.height = "auto";
       canvas.style.aspectRatio = `${aspectWidth} / ${aspectHeight}`;
 
       if (wrapper) {
-        wrapper.style.width = `${aspectWidth}px`;
         wrapper.style.maxWidth = `${aspectWidth}px`;
-        wrapper.style.height = `${aspectHeight}px`;
         wrapper.style.aspectRatio = `${aspectWidth} / ${aspectHeight}`;
       }
 
@@ -155,7 +153,6 @@ export default function PDFReader() {
       }
 
       // Use PDFium WASM to render the page block directly to RGBA array
-      // To keep UI highly responsive we use setTimeout 0 so render block doesn't completely freeze
       await new Promise(resolve => setTimeout(resolve, 0));
       const { width: pixelWidth, height: pixelHeight, rgba } = page.render({ scale: targetScale, background: "white" });
 
@@ -194,7 +191,6 @@ export default function PDFReader() {
     // Get page 1 viewport to calculate initial page aspect ratio for placeholder wrappers
     let sampleAspect = "1 / 1.414"; // Standard A4 default
     let initialAspectWidth = 0;
-    let initialAspectHeight = 0;
     try {
       const page1 = doc.page(1);
       let initialScale = scaleRef.current;
@@ -204,7 +200,6 @@ export default function PDFReader() {
       }
       sampleAspect = `${page1.width} / ${page1.height}`;
       initialAspectWidth = Math.floor(page1.width * initialScale);
-      initialAspectHeight = Math.floor(page1.height * initialScale);
     } catch (e) {
       console.warn("Could not inspect page 1 viewport:", e);
     }
@@ -246,18 +241,15 @@ export default function PDFReader() {
       wrapper.className = "pdf-page-wrapper";
       wrapper.setAttribute("data-page-num", i.toString());
       wrapper.style.aspectRatio = sampleAspect;
-      if (initialAspectWidth > 0 && initialAspectHeight > 0) {
-        wrapper.style.width = `${initialAspectWidth}px`;
+      if (initialAspectWidth > 0) {
         wrapper.style.maxWidth = `${initialAspectWidth}px`;
-        wrapper.style.height = `${initialAspectHeight}px`;
       }
 
       const canvas = document.createElement("canvas");
       canvas.className = "pdf-page-canvas";
       canvas.setAttribute("data-page-num", i.toString());
-      if (initialAspectWidth > 0 && initialAspectHeight > 0) {
+      if (initialAspectWidth > 0) {
         canvas.style.width = `${initialAspectWidth}px`;
-        canvas.style.height = `${initialAspectHeight}px`;
         canvas.style.aspectRatio = sampleAspect;
       }
 
@@ -278,47 +270,39 @@ export default function PDFReader() {
     if (!doc) return;
 
     try {
+      const page1 = doc.page(1);
+
+      let renderScale = scaleRef.current;
       const container = scrollViewRef.current;
-      const availableWidth = container
-        ? Math.max(container.clientWidth - 24, 280)
-        : window.innerWidth - 24;
+      const availableWidth = container ? Math.max(container.clientWidth - 24, 280) : window.innerWidth - 24;
 
-      // 1. Immediately update each page using its own dimensions.
-      // This avoids layout jumps when a PDF contains mixed page sizes or rotations.
-      pageWrappersRef.current.forEach((wrapper, index) => {
-        const canvas = pageCanvasesRef.current[index];
-        if (!wrapper || !canvas) return;
+      if (fitToWidthRef.current && availableWidth > 0) {
+        renderScale = availableWidth / page1.width;
+      }
 
-        try {
-          const page = doc.page(index + 1);
-          let renderScale = scaleRef.current;
+      const aspectWidth = Math.floor(page1.width * renderScale);
+      const aspectHeight = Math.floor(page1.height * renderScale);
+      const sampleAspect = `${aspectWidth} / ${aspectHeight}`;
 
-          if (fitToWidthRef.current && availableWidth > 0) {
-            renderScale = availableWidth / page.width;
-          }
-
-          const aspectWidth = Math.floor(page.width * renderScale);
-          const aspectHeight = Math.floor(page.height * renderScale);
-          const pageAspect = `${aspectWidth} / ${aspectHeight}`;
-
-          wrapper.style.width = `${aspectWidth}px`;
+      // 1. Immediately update CSS on all wrappers and canvases for instant response
+      pageWrappersRef.current.forEach((wrapper) => {
+        if (wrapper) {
           wrapper.style.maxWidth = `${aspectWidth}px`;
-          wrapper.style.height = `${aspectHeight}px`;
-          wrapper.style.aspectRatio = pageAspect;
+          wrapper.style.aspectRatio = sampleAspect;
+        }
+      });
 
+      pageCanvasesRef.current.forEach((canvas) => {
+        if (canvas) {
           canvas.style.width = `${aspectWidth}px`;
-          canvas.style.maxWidth = "none";
-          canvas.style.height = `${aspectHeight}px`;
-          canvas.style.aspectRatio = pageAspect;
-        } catch (pageError) {
-          console.warn(`Could not resize page ${index + 1}:`, pageError);
+          canvas.style.aspectRatio = sampleAspect;
         }
       });
 
       // 2. Reset render states to force vector clarity at new scale
       pageRenderStatesRef.current.fill(false);
 
-      // 3. Immediately re-render currently visible pages (conservative bounds to prevent memory crash)
+      // 3. Immediately re-render currently visible pages
       pageWrappersRef.current.forEach((wrapper, index) => {
         if (wrapper) {
           const rect = wrapper.getBoundingClientRect();
@@ -354,234 +338,161 @@ export default function PDFReader() {
     applyZoom();
   }, [applyZoom]);
 
-  // Touch Pinch-to-Zoom Gesture Handler for Mobile Devices (stable and finger-anchored)
+  // Robust & Stable Pinch-to-Zoom Gesture Handler for Touch Devices
   useEffect(() => {
     const container = scrollViewRef.current;
-    const content = canvasContainerRef.current;
-    if (!container || !content) return;
-
-    const MIN_SCALE = 0.6;
-    const MAX_SCALE = 4.0;
-    const PINCH_SENSITIVITY = 0.72;
-    const SMOOTHING = 0.3;
-    const DEAD_ZONE = 0.003;
+    if (!container) return;
 
     let isPinching = false;
-    let animationFrame = 0;
-    let wheelFrame = 0;
-
-    let startDistance = 0;
+    let initialDist = 0;
     let startScale = scaleRef.current;
-    let previewScale = startScale;
-    let targetScale = startScale;
+    let currentScale = scaleRef.current;
+    let rafId: number | null = null;
 
-    let startMidpoint = { x: 0, y: 0 };
-    let currentMidpoint = { x: 0, y: 0 };
-    let transformOrigin = { x: 0, y: 0 };
+    let viewportPinchX = 0;
+    let viewportPinchY = 0;
+    let originX = 0;
+    let originY = 0;
+    let initialScrollTop = 0;
+    let initialScrollLeft = 0;
 
-    let anchorPage: HTMLDivElement | null = null;
-    let anchorRatioX = 0.5;
-    let anchorRatioY = 0.5;
-    let previousOverflowAnchor = "";
+    const getDistance = (touches: TouchList) => {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.hypot(dx, dy);
+    };
 
-    const clampScale = (value: number) =>
-      Math.min(MAX_SCALE, Math.max(MIN_SCALE, value));
-
-    const getTouchMetrics = (touches: TouchList) => {
-      const first = touches[0];
-      const second = touches[1];
-      const dx = second.clientX - first.clientX;
-      const dy = second.clientY - first.clientY;
-
+    const getCenter = (touches: TouchList) => {
       return {
-        distance: Math.hypot(dx, dy),
-        midpoint: {
-          x: (first.clientX + second.clientX) / 2,
-          y: (first.clientY + second.clientY) / 2,
-        },
+        x: (touches[0].clientX + touches[1].clientX) / 2,
+        y: (touches[0].clientY + touches[1].clientY) / 2,
       };
-    };
-
-    const renderPinchPreview = () => {
-      animationFrame = 0;
-      if (!isPinching) return;
-
-      const relativeScale = previewScale / startScale;
-      const translateX = currentMidpoint.x - startMidpoint.x;
-      const translateY = currentMidpoint.y - startMidpoint.y;
-
-      content.style.transformOrigin = `${transformOrigin.x}px ${transformOrigin.y}px`;
-      content.style.transform =
-        `translate3d(${translateX}px, ${translateY}px, 0) ` +
-        `scale(${relativeScale})`;
-    };
-
-    const schedulePinchPreview = () => {
-      if (animationFrame !== 0) return;
-      animationFrame = requestAnimationFrame(renderPinchPreview);
     };
 
     const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 2) return;
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        isPinching = true;
+        initialDist = getDistance(e.touches);
+        startScale = scaleRef.current;
+        currentScale = startScale;
 
-      e.preventDefault();
+        const center = getCenter(e.touches);
+        const scrollRect = container.getBoundingClientRect();
+        
+        // Center position relative to viewport scroll box
+        viewportPinchX = center.x - scrollRect.left;
+        viewportPinchY = center.y - scrollRect.top;
 
-      const metrics = getTouchMetrics(e.touches);
-      isPinching = true;
-      startDistance = Math.max(metrics.distance, 1);
-      startScale = scaleRef.current;
-      previewScale = startScale;
-      targetScale = startScale;
-      startMidpoint = metrics.midpoint;
-      currentMidpoint = metrics.midpoint;
+        initialScrollTop = container.scrollTop;
+        initialScrollLeft = container.scrollLeft;
 
-      setFitToWidth(false);
-      fitToWidthRef.current = false;
-
-      const contentRect = content.getBoundingClientRect();
-      transformOrigin = {
-        x: startMidpoint.x - contentRect.left,
-        y: startMidpoint.y - contentRect.top,
-      };
-
-      anchorPage = document
-        .elementFromPoint(startMidpoint.x, startMidpoint.y)
-        ?.closest(".pdf-page-wrapper") as HTMLDivElement | null;
-
-      if (anchorPage) {
-        const pageRect = anchorPage.getBoundingClientRect();
-        if (pageRect.width > 0 && pageRect.height > 0) {
-          anchorRatioX = Math.min(
-            1,
-            Math.max(0, (startMidpoint.x - pageRect.left) / pageRect.width)
-          );
-          anchorRatioY = Math.min(
-            1,
-            Math.max(0, (startMidpoint.y - pageRect.top) / pageRect.height)
-          );
+        // Dynamic origin relative to canvas container element
+        if (canvasContainerRef.current) {
+          const containerRect = canvasContainerRef.current.getBoundingClientRect();
+          originX = center.x - containerRect.left;
+          originY = center.y - containerRect.top;
         }
-      }
 
-      previousOverflowAnchor = container.style.overflowAnchor;
-      container.style.overflowAnchor = "none";
-      content.style.transition = "none";
-      content.style.willChange = "transform";
+        setFitToWidth(false);
+        fitToWidthRef.current = false;
+      }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isPinching || e.touches.length !== 2) return;
+      if (isPinching && e.touches.length === 2) {
+        e.preventDefault();
+        const dist = getDistance(e.touches);
+        
+        // Filter out initial micro-distance jitter
+        if (initialDist < 10) return;
 
-      e.preventDefault();
+        const scaleRatio = dist / initialDist;
+        const targetScale = Math.min(Math.max(startScale * scaleRatio, 0.5), 4.0);
+        currentScale = targetScale;
 
-      const metrics = getTouchMetrics(e.touches);
-      currentMidpoint = metrics.midpoint;
-
-      const distanceRatio = metrics.distance / startDistance;
-      const adjustedRatio = Math.pow(distanceRatio, PINCH_SENSITIVITY);
-      targetScale = clampScale(startScale * adjustedRatio);
-
-      const scaleDifference = targetScale - previewScale;
-      if (Math.abs(scaleDifference) >= DEAD_ZONE) {
-        previewScale += scaleDifference * SMOOTHING;
+        // Batch visual scale updates to display refresh rate
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          if (canvasContainerRef.current) {
+            const relativeFactor = currentScale / scaleRef.current;
+            canvasContainerRef.current.style.transformOrigin = `${originX}px ${originY}px`;
+            canvasContainerRef.current.style.transform = `scale(${relativeFactor})`;
+            canvasContainerRef.current.style.transition = "none";
+            canvasContainerRef.current.style.willChange = "transform";
+          }
+        });
       }
-
-      schedulePinchPreview();
-    };
-
-    const finishPinch = () => {
-      if (!isPinching) return;
-
-      isPinching = false;
-
-      if (animationFrame !== 0) {
-        cancelAnimationFrame(animationFrame);
-        animationFrame = 0;
-      }
-
-      // Use the smoothed target while preventing tiny accidental scale changes.
-      const finalScale = clampScale(
-        Math.round(
-          (Math.abs(targetScale - startScale) < 0.015 ? startScale : targetScale) * 100
-        ) / 100
-      );
-
-      scaleRef.current = finalScale;
-      setScale(finalScale);
-
-      // applyZoom updates layout synchronously before its page renders complete.
-      reRenderAll();
-
-      content.style.transform = "";
-      content.style.transformOrigin = "";
-      content.style.transition = "";
-
-      // Keep the same point in the PDF underneath the fingers after zoom commits.
-      if (anchorPage?.isConnected) {
-        const newPageRect = anchorPage.getBoundingClientRect();
-        const newAnchorX = newPageRect.left + newPageRect.width * anchorRatioX;
-        const newAnchorY = newPageRect.top + newPageRect.height * anchorRatioY;
-
-        container.scrollLeft += newAnchorX - currentMidpoint.x;
-        container.scrollTop += newAnchorY - currentMidpoint.y;
-      }
-
-      container.style.overflowAnchor = previousOverflowAnchor;
-
-      requestAnimationFrame(() => {
-        content.style.willChange = "";
-      });
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       if (isPinching && e.touches.length < 2) {
-        finishPinch();
+        isPinching = false;
+        if (rafId) cancelAnimationFrame(rafId);
+
+        if (canvasContainerRef.current) {
+          canvasContainerRef.current.style.transform = "";
+          canvasContainerRef.current.style.transformOrigin = "";
+          canvasContainerRef.current.style.transition = "";
+          canvasContainerRef.current.style.willChange = "";
+        }
+
+        const rawFinalScale = Math.min(Math.max(currentScale, 0.5), 4.0);
+        const roundedScale = +(rawFinalScale).toFixed(2);
+        const scaleChangeRatio = roundedScale / scaleRef.current;
+
+        // Ignore micro scale noise (< 1%)
+        if (Math.abs(scaleChangeRatio - 1) > 0.01) {
+          // Calculate precise focal point shift so user's touch anchor stays locked
+          const newScrollTop = (initialScrollTop + viewportPinchY) * scaleChangeRatio - viewportPinchY;
+          const newScrollLeft = (initialScrollLeft + viewportPinchX) * scaleChangeRatio - viewportPinchX;
+
+          setScale(roundedScale);
+          scaleRef.current = roundedScale;
+
+          reRenderAll();
+
+          container.scrollTop = Math.max(0, newScrollTop);
+          container.scrollLeft = Math.max(0, newScrollLeft);
+        }
       }
     };
 
-    const handleTouchCancel = () => {
-      finishPinch();
-    };
-
     // Desktop trackpad / Ctrl + Wheel Pinch Zoom
+    let wheelTimer: NodeJS.Timeout | null = null;
     const handleWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return;
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        setFitToWidth(false);
+        fitToWidthRef.current = false;
 
-      e.preventDefault();
-      setFitToWidth(false);
-      fitToWidthRef.current = false;
+        const delta = e.deltaY < 0 ? 0.1 : -0.1;
+        const next = Math.min(Math.max(+(scaleRef.current + delta).toFixed(2), 0.5), 4.0);
 
-      // Smaller increments make trackpad zoom less jumpy.
-      const delta = e.deltaY < 0 ? 0.05 : -0.05;
-
-      setScale((prev) => {
-        const next = clampScale(Math.round((prev + delta) * 100) / 100);
-        scaleRef.current = next;
-
-        if (wheelFrame === 0) {
-          wheelFrame = requestAnimationFrame(() => {
-            wheelFrame = 0;
+        if (next !== scaleRef.current) {
+          setScale(next);
+          scaleRef.current = next;
+          if (wheelTimer) clearTimeout(wheelTimer);
+          wheelTimer = setTimeout(() => {
             reRenderAll();
-          });
+          }, 60);
         }
-
-        return next;
-      });
+      }
     };
 
     container.addEventListener("touchstart", handleTouchStart, { passive: false });
     container.addEventListener("touchmove", handleTouchMove, { passive: false });
     container.addEventListener("touchend", handleTouchEnd);
-    container.addEventListener("touchcancel", handleTouchCancel);
+    container.addEventListener("touchcancel", handleTouchEnd);
     container.addEventListener("wheel", handleWheel, { passive: false });
 
     return () => {
-      if (animationFrame !== 0) cancelAnimationFrame(animationFrame);
-      if (wheelFrame !== 0) cancelAnimationFrame(wheelFrame);
-
+      if (rafId) cancelAnimationFrame(rafId);
+      if (wheelTimer) clearTimeout(wheelTimer);
       container.removeEventListener("touchstart", handleTouchStart);
       container.removeEventListener("touchmove", handleTouchMove);
       container.removeEventListener("touchend", handleTouchEnd);
-      container.removeEventListener("touchcancel", handleTouchCancel);
+      container.removeEventListener("touchcancel", handleTouchEnd);
       container.removeEventListener("wheel", handleWheel);
     };
   }, [reRenderAll]);
@@ -620,7 +531,6 @@ export default function PDFReader() {
           if (!data) throw new Error("Offline PDF not found");
           arrayBuffer = data;
         } else {
-          // Fetch ArrayBuffer directly
           const response = await fetch(fileUrl, { mode: "cors" });
           if (!response.ok) throw new Error("Network response not OK");
           arrayBuffer = await response.arrayBuffer();
@@ -628,11 +538,9 @@ export default function PDFReader() {
 
         if (!active) return;
         
-        // Ensure old doc/engine is destroyed before creating new
         if (pdfDocRef.current) pdfDocRef.current[Symbol.dispose]();
         if (engineRef.current) engineRef.current.destroy();
 
-        // Use pre-wired browser engine that will load pdfium.esm.wasm
         const engine = await createEngine({ wasmUrl: 'https://unpkg.com/clawpdf@0.3.0/dist/vendor/pdfium.esm.wasm' });
         engineRef.current = engine;
         
@@ -676,7 +584,6 @@ export default function PDFReader() {
         
         if (!active) return;
 
-        // Ensure old doc/engine is destroyed before creating new
         if (pdfDocRef.current) pdfDocRef.current[Symbol.dispose]();
         if (engineRef.current) engineRef.current.destroy();
 
@@ -712,7 +619,6 @@ export default function PDFReader() {
       if (renderObserverRef.current) renderObserverRef.current.disconnect();
       if (activePageObserverRef.current) activePageObserverRef.current.disconnect();
       
-      // Cleanup PDFium engine completely to free WASM memory
       if (pdfDocRef.current) pdfDocRef.current[Symbol.dispose]();
       if (engineRef.current) engineRef.current.destroy();
     };
@@ -780,15 +686,7 @@ export default function PDFReader() {
         )}
 
         {!noUrlError && (
-          <div
-            id="pdf-scroll-view"
-            ref={scrollViewRef}
-            className="h-full w-full overflow-auto overscroll-contain"
-            style={{
-              touchAction: "pan-x pan-y",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
+          <div id="pdf-scroll-view" ref={scrollViewRef} className="h-full w-full overflow-y-auto">
             {isLoading && (
               <div id="loading-spinner" className="flex flex-col items-center justify-center h-full gap-4 text-slate-600">
                 <Loader2 className="w-8 h-8 animate-spin text-[#2053BA]" />
