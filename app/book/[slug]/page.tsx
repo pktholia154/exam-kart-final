@@ -10,6 +10,7 @@ import {
 import { BookActions } from "@/components/BookActions";
 import { ProceduralCover } from "@/components/ProceduralCover";
 import { BookCard } from "@/components/BookCard";
+import Markdown from "react-markdown";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import {
   Star,
@@ -307,12 +308,19 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
             <FileCheck2 className="w-3.5 h-3.5 text-[#2053BA]" /> About this E-Book
           </h2>
           <div className="prose prose-xs max-w-none text-xs text-gray-700 leading-relaxed font-normal space-y-2">
-            <p className="font-medium text-gray-800">
-              {book.seoDescription || book.fullDescription}
-            </p>
+            {book.seoDescription && (
+              <p className="font-medium text-gray-800">
+                {book.seoDescription}
+              </p>
+            )}
             {book.fullDescription && book.fullDescription !== book.seoDescription && (
-              <p className="text-gray-600 whitespace-pre-line leading-relaxed">
-                {book.fullDescription}
+              <div className="text-gray-600 leading-relaxed">
+                <Markdown>{book.fullDescription}</Markdown>
+              </div>
+            )}
+            {!book.seoDescription && !book.fullDescription && (
+              <p className="font-medium text-gray-800">
+                No description available.
               </p>
             )}
           </div>

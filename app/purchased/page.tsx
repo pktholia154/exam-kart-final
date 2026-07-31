@@ -198,7 +198,7 @@ export default function PurchasedPage() {
                     {offlineStatus[purchase.bookId || purchase.seoslug] ? (
                       <Link 
                         href={`/read/${purchase.bookId || purchase.seoslug}?type=offline`} 
-                        className="flex-1 bg-[#2053BA] hover:bg-[#301a9c] text-white py-1.5 px-3 rounded-lg text-[11px] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 shadow-2xs"
+                        className="flex-1 bg-[#53BA20] hover:bg-[#439619] text-white py-1.5 px-3 rounded-lg text-[11px] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 shadow-2xs"
                       >
                         <BookOpen className="w-3 h-3" /> Read Offline
                       </Link>

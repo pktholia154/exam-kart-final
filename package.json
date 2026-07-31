@@ -24,6 +24,7 @@
     "razorpay": "^2.9.8",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "react-markdown": "^10.1.0",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {

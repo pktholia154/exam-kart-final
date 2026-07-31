@@ -27,6 +27,13 @@ export function ProceduralCover({ title, className }: ProceduralCoverProps) {
         className
       )}
     >
+      {/* Top-Right White Background (Cut Corner Simulation) */}
+      <div className="absolute top-0 right-0 w-[28%] aspect-square z-10 pointer-events-none">
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+          <polygon points="0,0 100,0 100,100" fill="#FFFFFF" />
+        </svg>
+      </div>
+
       {/* Top-Right White Folded Page Corner (Dog Ear) */}
       <div className="absolute top-0 right-0 w-[28%] aspect-square z-20 pointer-events-none">
         <svg
