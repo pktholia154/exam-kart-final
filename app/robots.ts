@@ -1,15 +1,13 @@
-import { MetadataRoute } from "next";
-import { SITE_URL } from "@/lib/books-server";
+import type { MetadataRoute } from "next";
+
+const BASE_URL = "https://exam-kart.com";
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [
-      {
-        userAgent: "*",
-        allow: "/",
-        disallow: ["/profile", "/purchased", "/read/", "/api/", "/admin/"],
-      },
-    ],
-    sitemap: `${SITE_URL}/sitemap.xml`,
+    rules: {
+      userAgent: "*",
+      allow: "/",
+    },
+    sitemap: `${BASE_URL}/sitemap.xml`,
   };
 }
