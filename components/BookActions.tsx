@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType, signInWithPopup, googleProvider, auth } from "@/lib/firebase";
-import { BookOpen, Check, ShieldAlert, Loader2, CreditCard, Share2, CheckCheck, ShoppingCart } from "lucide-react";
+import { BookOpen, Check, ShieldAlert, Loader2, CreditCard, Share2, CheckCheck, ShoppingCart, Clock } from "lucide-react";
 import Link from "next/link";
 import { Book } from "@/lib/books-store";
 
@@ -24,7 +24,7 @@ export function BookActions({ book }: BookActionsProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { addToCart, items } = useCart();
-  const [buying, setBuying] = useState(false);
+  const [processingType, setProcessingType] = useState<"buy" | "rent" | null>(null);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [checkingPurchase, setCheckingPurchase] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -49,7 +49,19 @@ export function BookActions({ book }: BookActionsProps) {
         );
         const querySnapshot = await getDocs(q);
         if (active) {
-          setHasPurchased(!querySnapshot.empty);
+          let isValidPurchase = false;
+          const now = new Date();
+          querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.isRent && data.rentExpiresAt) {
+              if (new Date(data.rentExpiresAt) > now) {
+                isValidPurchase = true;
+              }
+            } else {
+              isValidPurchase = true;
+            }
+          });
+          setHasPurchased(isValidPurchase);
         }
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, "purchases");
@@ -110,7 +122,7 @@ export function BookActions({ book }: BookActionsProps) {
     });
   };
 
-  const handleBuy = async () => {
+  const handleBuy = async (isRent: boolean = false) => {
     setErrorMessage(null);
 
     // 1. Ensure User Authentication
@@ -131,19 +143,19 @@ export function BookActions({ book }: BookActionsProps) {
       return;
     }
 
-    setBuying(true);
+    setProcessingType(isRent ? "rent" : "buy");
 
     try {
       // 2. Load Razorpay SDK
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
         setErrorMessage("Failed to load Razorpay payment gateway. Please check your internet connection.");
-        setBuying(false);
+        setProcessingType(null);
         return;
       }
 
       // 3. Calculate amount in paise (Min 100 paise = ₹1)
-      const priceNum = parseFloat(book.buyprice) || 99;
+      const priceNum = isRent ? 39 : (parseFloat(book.buyprice) || 99);
       const amountInPaise = Math.max(100, Math.round(priceNum * 100));
 
       // 4. Create Order on Backend
@@ -212,6 +224,8 @@ export function BookActions({ book }: BookActionsProps) {
                 paymentId: response.razorpay_payment_id,
                 pdfurl: book.pdfurl || "",
                 purchasedAt: new Date().toISOString(),
+                isRent: isRent,
+                rentExpiresAt: isRent ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null
               });
 
               setHasPurchased(true);
@@ -225,7 +239,7 @@ export function BookActions({ book }: BookActionsProps) {
             console.error("Error verifying payment signature:", verifyErr);
             setErrorMessage("An error occurred while verifying your payment signature.");
           } finally {
-            setBuying(false);
+            setProcessingType(null);
           }
         },
         prefill: {
@@ -237,7 +251,7 @@ export function BookActions({ book }: BookActionsProps) {
         },
         modal: {
           ondismiss: function () {
-            setBuying(false);
+            setProcessingType(null);
             console.log("Razorpay payment modal closed by user.");
           },
         },
@@ -247,7 +261,7 @@ export function BookActions({ book }: BookActionsProps) {
 
       razorpayInstance.on("payment.failed", function (failResponse: any) {
         console.error("Razorpay payment failed:", failResponse.error);
-        setBuying(false);
+        setProcessingType(null);
         setErrorMessage(
           failResponse.error?.description || "Payment failed. Please try again or use a different payment method."
         );
@@ -257,7 +271,7 @@ export function BookActions({ book }: BookActionsProps) {
     } catch (err: any) {
       console.error("Error during checkout:", err);
       setErrorMessage(err.message || "An unexpected error occurred during checkout.");
-      setBuying(false);
+      setProcessingType(null);
     }
   };
 
@@ -312,12 +326,12 @@ export function BookActions({ book }: BookActionsProps) {
               Sample
             </Link>
             <button
-              onClick={handleBuy}
-              disabled={buying || checkingPurchase}
+              onClick={() => handleBuy(false)}
+              disabled={processingType !== null || checkingPurchase}
               className="flex-[1.5] w-full bg-[#ffa13b] text-black hover:bg-[#ff9124] py-2.5 px-2 rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-70 cursor-pointer border-none"
               style={{ backgroundColor: "#ffa13b", color: "#000000" }}
             >
-              {buying ? (
+              {processingType === "buy" ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
                   Processing...
@@ -334,23 +348,43 @@ export function BookActions({ book }: BookActionsProps) {
       </div>
 
       {!hasPurchased && (
-        <button
-          onClick={() => addToCart(book)}
-          disabled={inCart || checkingPurchase}
-          className="w-full bg-white text-black border border-black hover:bg-gray-50 py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm disabled:opacity-50"
-        >
-          {inCart ? (
-            <>
-              <Check className="w-4 h-4 text-emerald-600" />
-              <span>Added to Cart</span>
-            </>
-          ) : (
-            <>
-              <ShoppingCart className="w-4 h-4 text-black" />
-              <span>Add to Cart</span>
-            </>
-          )}
-        </button>
+        <>
+          <button
+            onClick={() => handleBuy(true)}
+            disabled={processingType !== null || checkingPurchase}
+            className="w-full bg-[#f8f9fa] text-gray-700 hover:bg-[#e9ecef] py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm border border-gray-200 disabled:opacity-50"
+          >
+            {processingType === "rent" ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
+                <span>Processing...</span>
+              </>
+            ) : (
+              <>
+                <Clock className="w-4 h-4 text-gray-600" />
+                <span>On Rent 30 Days . ₹39</span>
+              </>
+            )}
+          </button>
+          
+          <button
+            onClick={() => addToCart(book)}
+            disabled={inCart || checkingPurchase || processingType !== null}
+            className="w-full bg-white text-black border border-black hover:bg-gray-50 py-2.5 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm disabled:opacity-50"
+          >
+            {inCart ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Added to Cart</span>
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="w-4 h-4 text-black" />
+                <span>Add to Cart</span>
+              </>
+            )}
+          </button>
+        </>
       )}
 
       {/* Prominent Share Button */}

@@ -3,11 +3,17 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { signInWithPopup, googleProvider, auth, db, handleFirestoreError, OperationType } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, deleteDoc } from "firebase/firestore";
 import { ProceduralCover } from "@/components/ProceduralCover";
 import { Download, BookOpen, Clock, MoreVertical, FileText, CheckCircle2, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { savePdfOffline, isPdfOffline, removePdfOffline } from "@/lib/offline-storage";
+
+const getDaysRemaining = (expiresAt: string) => {
+  const diff = new Date(expiresAt).getTime() - new Date().getTime();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return days > 0 ? days : 0;
+};
 
 export default function PurchasedPage() {
   const { user, loading: authLoading } = useAuth();
@@ -37,10 +43,26 @@ export default function PurchasedPage() {
         );
         const querySnapshot = await getDocs(q);
         const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const now = new Date();
+        const activePurchases = [];
+        for (const purchase of data) {
+          if (purchase.isRent && purchase.rentExpiresAt) {
+            if (new Date(purchase.rentExpiresAt) < now) {
+              // Delete expired rental
+              try {
+                await deleteDoc(doc(db, "purchases", purchase.id));
+              } catch (e) {
+                console.error("Failed to delete expired rent:", e);
+              }
+              continue;
+            }
+          }
+          activePurchases.push(purchase);
+        }
         // sorting by purchasedAt manually since we didn't create a composite index
-        data.sort((a: any, b: any) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime());
-        setPurchases(data);
-        await checkOfflineStatus(data);
+        activePurchases.sort((a: any, b: any) => new Date(b.purchasedAt).getTime() - new Date(a.purchasedAt).getTime());
+        setPurchases(activePurchases);
+        await checkOfflineStatus(activePurchases);
       } catch (error) {
         handleFirestoreError(error, OperationType.LIST, 'purchases');
       } finally {
@@ -173,12 +195,25 @@ export default function PurchasedPage() {
               <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch py-0.5">
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-0.5">
-                    <span className="text-[0.5rem] font-extrabold text-[#8720BA] uppercase tracking-wider truncate">
-                      {purchase.category || "E-Book"}
-                    </span>
-                    <span className="text-[0.5rem] text-gray-400 font-medium flex items-center gap-1 shrink-0">
-                      <Clock className="w-2.5 h-2.5" /> {new Date(purchase.purchasedAt).toLocaleDateString()}
-                    </span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {purchase.isRent && (
+                        <span className="text-[0.45rem] font-extrabold text-[#ffa13b] bg-[#ffa13b]/10 px-1.5 py-0.5 rounded-sm uppercase tracking-wider shrink-0">
+                          On Rent
+                        </span>
+                      )}
+                      <span className="text-[0.5rem] font-extrabold text-[#8720BA] uppercase tracking-wider truncate">
+                        {purchase.category || "E-Book"}
+                      </span>
+                    </div>
+                    {purchase.isRent && purchase.rentExpiresAt ? (
+                      <span className="text-[0.5rem] text-[#ffa13b] font-bold flex items-center gap-1 shrink-0 bg-[#ffa13b]/10 px-1.5 py-0.5 rounded">
+                        <Clock className="w-2.5 h-2.5" /> {getDaysRemaining(purchase.rentExpiresAt)} days left
+                      </span>
+                    ) : (
+                      <span className="text-[0.5rem] text-gray-400 font-medium flex items-center gap-1 shrink-0">
+                        <Clock className="w-2.5 h-2.5" /> {new Date(purchase.purchasedAt).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-xs font-extrabold text-gray-900 leading-snug line-clamp-2 mb-1">
                     {purchase.title}
@@ -210,25 +245,27 @@ export default function PurchasedPage() {
                         <BookOpen className="w-3 h-3" /> Read Online
                       </Link>
                     )}
-                    <button 
-                      onClick={() => handleDownloadOffline(purchase)}
-                      disabled={downloading[purchase.bookId || purchase.seoslug]}
-                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-1.5 px-3 rounded-lg text-[0.6111rem] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 border border-gray-200/80 disabled:opacity-50"
-                    >
-                      {downloading[purchase.bookId || purchase.seoslug] ? (
-                        <>
-                          <Loader2 className="w-3 h-3 text-[#2053BA] animate-spin" /> Saving...
-                        </>
-                      ) : offlineStatus[purchase.bookId || purchase.seoslug] ? (
-                        <>
-                          <Trash2 className="w-3 h-3 text-red-500" /> Remove
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-3 h-3 text-[#2053BA]" /> Download
-                        </>
-                      )}
-                    </button>
+                    {!purchase.isRent && (
+                      <button 
+                        onClick={() => handleDownloadOffline(purchase)}
+                        disabled={downloading[purchase.bookId || purchase.seoslug]}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-1.5 px-3 rounded-lg text-[0.6111rem] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 border border-gray-200/80 disabled:opacity-50"
+                      >
+                        {downloading[purchase.bookId || purchase.seoslug] ? (
+                          <>
+                            <Loader2 className="w-3 h-3 text-[#2053BA] animate-spin" /> Saving...
+                          </>
+                        ) : offlineStatus[purchase.bookId || purchase.seoslug] ? (
+                          <>
+                            <Trash2 className="w-3 h-3 text-red-500" /> Remove
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-3 h-3 text-[#2053BA]" /> Download
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
