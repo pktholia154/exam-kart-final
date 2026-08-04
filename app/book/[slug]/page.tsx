@@ -210,7 +210,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
       {/* Breadcrumb Navigation */}
       <nav
         aria-label="Breadcrumb"
-        className="px-2.5 py-2 text-[10px] font-medium text-gray-500 overflow-x-auto no-scrollbar"
+        className="px-2.5 py-2 text-[0.5556rem] font-medium text-gray-500 overflow-x-auto no-scrollbar"
       >
         <ol className="flex items-center gap-1 whitespace-nowrap">
           <li>
@@ -251,7 +251,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
           <div className="flex-1 min-w-0">
             <Link
               href={`/categories/${categorySlug}`}
-              className="inline-block text-[9px] font-extrabold text-[#8720BA] uppercase tracking-wider mb-0.5 hover:underline"
+              className="inline-block text-[0.5rem] font-extrabold text-[#8720BA] uppercase tracking-wider mb-0.5 hover:underline"
             >
               {book.category}
             </Link>
@@ -266,10 +266,10 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
                   ? book.averageRating.toFixed(1)
                   : book.averageRating || "4.5"}
               </span>
-              <span className="text-gray-400 text-[10px]">({book.reviewCount || 0} reviews)</span>
+              <span className="text-gray-400 text-[0.5556rem]">({book.reviewCount || 0} reviews)</span>
             </div>
 
-            <div className="text-[11px] font-medium text-gray-600 mb-2 flex items-center gap-1">
+            <div className="text-[0.6111rem] font-medium text-gray-600 mb-2 flex items-center gap-1">
               <Building2 className="w-3 h-3 text-gray-400" />
               Publisher:{" "}
               <span className="font-bold text-gray-900">
@@ -285,7 +285,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
                 </span>
               )}
               {Number(book.listprice) > Number(book.buyprice) && (
-                <span className="text-[9px] font-bold text-[#53BA20] bg-[#53BA20]/10 px-1 py-0.5 rounded">
+                <span className="text-[0.5rem] font-bold text-[#53BA20] bg-[#53BA20]/10 px-1 py-0.5 rounded">
                   {Math.round(
                     ((Number(book.listprice) - Number(book.buyprice)) /
                       Number(book.listprice)) *
@@ -315,7 +315,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
               </p>
             )}
             {book.fullDescription && book.fullDescription !== book.seoDescription && (
-              <div className="text-gray-600 leading-relaxed font-sans prose max-w-none prose-p:text-[13.5px] prose-p:m-0 prose-headings:text-gray-900 prose-headings:m-0 prose-headings:mb-1 prose-h1:text-[16.5px] prose-h2:text-[15px] prose-h3:text-[14px] prose-ul:text-[13.5px] prose-ul:m-0 prose-ol:text-[13.5px] prose-ol:m-0 prose-li:text-[13.5px] prose-li:m-0 space-y-2">
+              <div className="text-gray-600 leading-relaxed font-sans prose max-w-none prose-p:text-[0.75rem] prose-p:m-0 prose-headings:text-gray-900 prose-headings:m-0 prose-headings:mb-1 prose-h1:text-[0.916rem] prose-h2:text-[0.833rem] prose-h3:text-[0.777rem] prose-ul:text-[0.75rem] prose-ul:m-0 prose-ol:text-[0.75rem] prose-ol:m-0 prose-li:text-[0.75rem] prose-li:m-0 space-y-2">
                 <Markdown remarkPlugins={[remarkBreaks]}>{book.fullDescription.replace(/\\n/g, '\n')}</Markdown>
               </div>
             )}
@@ -329,14 +329,14 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
           {/* Tags */}
           {book.tags && book.tags.length > 0 && (
             <div className="pt-2">
-              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
+              <span className="text-[0.5rem] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
                 Keywords & Topics
               </span>
               <div className="flex flex-wrap gap-1">
                 {book.tags.map((tag: string, idx: number) => (
                   <span
                     key={idx}
-                    className="flex items-center gap-1 text-[9px] font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full"
+                    className="flex items-center gap-1 text-[0.5rem] font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full"
                   >
                     <Tag className="w-2.5 h-2.5 text-[#2053BA]" /> {tag}
                   </span>
@@ -354,7 +354,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
 
           <div className="grid grid-cols-2 gap-y-3 gap-x-3 py-1">
             <div className="flex flex-col gap-0.5">
-              <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+              <span className="flex items-center gap-1 text-[0.5rem] font-bold text-gray-400 uppercase tracking-wider">
                 <Globe className="w-3 h-3 text-[#2053BA]" /> Language
               </span>
               <span className="text-xs font-bold text-gray-900">
@@ -363,7 +363,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+              <span className="flex items-center gap-1 text-[0.5rem] font-bold text-gray-400 uppercase tracking-wider">
                 <BookOpen className="w-3 h-3 text-[#2053BA]" /> Pages
               </span>
               <span className="text-xs font-bold text-gray-900">
@@ -372,7 +372,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+              <span className="flex items-center gap-1 text-[0.5rem] font-bold text-gray-400 uppercase tracking-wider">
                 <HardDrive className="w-3 h-3 text-[#2053BA]" /> File Size
               </span>
               <span className="text-xs font-bold text-gray-900">
@@ -381,7 +381,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+              <span className="flex items-center gap-1 text-[0.5rem] font-bold text-gray-400 uppercase tracking-wider">
                 <Download className="w-3 h-3 text-[#2053BA]" /> Format
               </span>
               <span className="text-xs font-bold text-gray-900">
@@ -404,7 +404,7 @@ export default async function BookDetailsPage({ params }: BookPageProps) {
             </h2>
             <Link
               href={`/categories/${categorySlug}`}
-              className="text-[11px] font-bold text-[#2053BA] hover:underline"
+              className="text-[0.6111rem] font-bold text-[#2053BA] hover:underline"
             >
               View Category
             </Link>

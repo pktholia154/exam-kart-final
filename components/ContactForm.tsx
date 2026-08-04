@@ -36,7 +36,7 @@ export function ContactForm() {
               <User className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Legal Name</p>
+              <p className="text-[0.5556rem] font-bold text-gray-400 uppercase tracking-wider">Legal Name</p>
               <p className="text-xs font-bold text-gray-900">Pardeep Kumar</p>
             </div>
           </div>
@@ -46,7 +46,7 @@ export function ContactForm() {
               <Building className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Brand Name</p>
+              <p className="text-[0.5556rem] font-bold text-gray-400 uppercase tracking-wider">Brand Name</p>
               <p className="text-xs font-bold text-gray-900">Exam Kart</p>
             </div>
           </div>
@@ -59,7 +59,7 @@ export function ContactForm() {
               <Mail className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email Address</p>
+              <p className="text-[0.5556rem] font-bold text-gray-400 uppercase tracking-wider">Email Address</p>
               <a href="mailto:support@exam-kart.com" className="text-xs font-bold text-gray-900 truncate block hover:text-[#2053BA]">
                 support@exam-kart.com
               </a>
@@ -81,7 +81,7 @@ export function ContactForm() {
               <MapPin className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Office Address</p>
+              <p className="text-[0.5556rem] font-bold text-gray-400 uppercase tracking-wider">Office Address</p>
               <p className="text-xs font-bold text-gray-900 leading-snug">
                 1st Floor, SCO-28, Sector 13, Bhiwani, Haryana 127021
               </p>
@@ -103,7 +103,7 @@ export function ContactForm() {
               <Globe className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Official Website</p>
+              <p className="text-[0.5556rem] font-bold text-gray-400 uppercase tracking-wider">Official Website</p>
               <a 
                 href="https://exam-kart.com/" 
                 target="_blank" 
@@ -128,7 +128,7 @@ export function ContactForm() {
       {/* Message Form */}
       <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
         <h3 className="text-sm font-bold text-gray-900 mb-1">Send Us a Message</h3>
-        <p className="text-[11px] text-gray-500 mb-4">Typical response time: Within 24 hours</p>
+        <p className="text-[0.6111rem] text-gray-500 mb-4">Typical response time: Within 24 hours</p>
 
         {submitted ? (
           <div className="py-8 text-center space-y-3">
@@ -152,7 +152,7 @@ export function ContactForm() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">Your Name *</label>
+              <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">Your Name *</label>
               <input 
                 type="text" 
                 required
@@ -164,7 +164,7 @@ export function ContactForm() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">Email Address *</label>
+              <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">Email Address *</label>
               <input 
                 type="email" 
                 required
@@ -176,7 +176,7 @@ export function ContactForm() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">Subject</label>
+              <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">Subject</label>
               <input 
                 type="text" 
                 value={formData.subject}
@@ -187,7 +187,7 @@ export function ContactForm() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">Message *</label>
+              <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">Message *</label>
               <textarea 
                 required
                 rows={4}

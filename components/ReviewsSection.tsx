@@ -110,7 +110,7 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
         ) : (
           <form onSubmit={handleSubmit} className="bg-gray-50 border border-gray-100 rounded-xl p-3 space-y-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Your Rating</label>
+              <label className="text-[0.5556rem] font-bold text-gray-500 uppercase tracking-wide">Your Rating</label>
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -128,7 +128,7 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
             </div>
             
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Your Review</label>
+              <label className="text-[0.5556rem] font-bold text-gray-500 uppercase tracking-wide">Your Review</label>
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
@@ -139,7 +139,7 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
               />
             </div>
 
-            {error && <p className="text-[10px] font-semibold text-red-500">{error}</p>}
+            {error && <p className="text-[0.5556rem] font-semibold text-red-500">{error}</p>}
 
             <button
               type="submit"
@@ -169,11 +169,11 @@ export function ReviewsSection({ bookId }: ReviewsSectionProps) {
                 <span className="text-xs font-bold text-gray-900">{review.userName}</span>
                 <div className="flex items-center gap-0.5">
                   <Star className="w-3 h-3 text-[#BA8720] fill-[#BA8720]" />
-                  <span className="text-[10px] font-bold text-gray-700">{review.rating.toFixed(1)}</span>
+                  <span className="text-[0.5556rem] font-bold text-gray-700">{review.rating.toFixed(1)}</span>
                 </div>
               </div>
               <p className="text-xs text-gray-600 leading-relaxed">{review.comment}</p>
-              <span className="text-[9px] text-gray-400 mt-1 block">
+              <span className="text-[0.5rem] text-gray-400 mt-1 block">
                 {new Date(review.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
               </span>
             </div>

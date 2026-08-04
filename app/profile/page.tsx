@@ -133,13 +133,13 @@ export default function ProfilePage() {
           </div>
           <div className="min-w-0">
             <h1 className="text-xs sm:text-sm font-bold text-gray-900 truncate leading-tight">{user.displayName}</h1>
-            <p className="text-[11px] text-gray-500 truncate leading-tight">{user.email}</p>
+            <p className="text-[0.6111rem] text-gray-500 truncate leading-tight">{user.email}</p>
           </div>
         </div>
 
         <button 
           onClick={() => signOut(auth)}
-          className="px-3 py-1.5 rounded-full border border-gray-900 bg-white hover:bg-gray-50 text-gray-900 text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 active:scale-95"
+          className="px-3 py-1.5 rounded-full border border-gray-900 bg-white hover:bg-gray-50 text-gray-900 text-[0.6111rem] font-bold transition-all flex items-center gap-1 shrink-0 active:scale-95"
           title="Sign Out"
         >
           <LogOut className="w-3 h-3" /> Sign Out
@@ -151,12 +151,12 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-wider text-[#2053BA]">Refer & Earn Program</span>
+            <span className="text-[0.5556rem] font-black uppercase tracking-wider text-[#2053BA]">Refer & Earn Program</span>
           </div>
 
           <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-300 text-emerald-800">
             <Wallet className="w-3 h-3 text-emerald-700" />
-            <span className="text-[11px] font-extrabold">Store Credit:</span>
+            <span className="text-[0.6111rem] font-extrabold">Store Credit:</span>
             <span className="text-xs font-black text-emerald-900">₹{walletBalance.toFixed(0)}</span>
           </div>
         </div>
@@ -165,7 +165,7 @@ export default function ProfilePage() {
           <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight leading-snug">
             Share 15% Off, Earn 20% Store Credit
           </h2>
-          <p className="text-[11px] text-gray-500 mt-0.5 leading-normal">
+          <p className="text-[0.6111rem] text-gray-500 mt-0.5 leading-normal">
             Give friends 15% off their first competitive exam ebook. You earn 20% in store credit on their purchase.
           </p>
         </div>
@@ -177,12 +177,12 @@ export default function ProfilePage() {
               type="text" 
               readOnly 
               value={referralLink}
-              className="flex-1 bg-transparent text-gray-900 text-[11px] font-mono outline-none truncate"
+              className="flex-1 bg-transparent text-gray-900 text-[0.6111rem] font-mono outline-none truncate"
             />
             {/* Green Pill Button (Matching Green Sample button from screenshot) */}
             <button
               onClick={copyToClipboard}
-              className="bg-[#48A36D] hover:bg-[#3D8F5E] text-white px-3.5 py-1.5 rounded-full text-[11px] font-extrabold flex items-center gap-1.5 shrink-0 transition-all active:scale-95 shadow-xs"
+              className="bg-[#48A36D] hover:bg-[#3D8F5E] text-white px-3.5 py-1.5 rounded-full text-[0.6111rem] font-extrabold flex items-center gap-1.5 shrink-0 transition-all active:scale-95 shadow-xs"
             >
               {copied ? (
                 <>
@@ -202,13 +202,13 @@ export default function ProfilePage() {
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-2 px-3 bg-white border border-gray-900 hover:bg-gray-50 text-gray-900 rounded-full text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+              className="py-2 px-3 bg-white border border-gray-900 hover:bg-gray-50 text-gray-900 rounded-full text-[0.6111rem] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
             >
               <Send className="w-3.5 h-3.5 text-[#25D366]" /> Share WhatsApp
             </a>
             <a
               href={emailUrl}
-              className="py-2 px-3 bg-white border border-gray-900 hover:bg-gray-50 text-gray-900 rounded-full text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+              className="py-2 px-3 bg-white border border-gray-900 hover:bg-gray-50 text-gray-900 rounded-full text-[0.6111rem] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
             >
               <Mail className="w-3.5 h-3.5 text-gray-700" /> Email Invite
             </a>
@@ -220,15 +220,15 @@ export default function ProfilePage() {
       <div className="py-2.5 my-1 border-y border-gray-100 grid grid-cols-3 gap-1 text-center bg-gray-50/50 rounded-xl">
         <div className="space-y-0">
           <span className="text-base sm:text-lg font-black text-gray-900 block leading-tight">₹{walletBalance.toFixed(0)}</span>
-          <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-tight">Available Credit</span>
+          <span className="text-[0.5556rem] font-extrabold text-gray-500 uppercase tracking-tight">Available Credit</span>
         </div>
         <div className="space-y-0 border-x border-gray-200">
           <span className="text-base sm:text-lg font-black text-emerald-600 block leading-tight">{successfulCount}</span>
-          <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-tight">Successful</span>
+          <span className="text-[0.5556rem] font-extrabold text-gray-500 uppercase tracking-tight">Successful</span>
         </div>
         <div className="space-y-0">
           <span className="text-base sm:text-lg font-black text-amber-500 block leading-tight">{pendingCount}</span>
-          <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-tight">Pending (7d)</span>
+          <span className="text-[0.5556rem] font-extrabold text-gray-500 uppercase tracking-tight">Pending (7d)</span>
         </div>
       </div>
 
@@ -241,7 +241,7 @@ export default function ProfilePage() {
           </div>
           <button 
             onClick={fetchReferralData} 
-            className="text-[11px] font-bold text-[#2053BA] hover:text-[#1a449b] flex items-center gap-1 transition-colors"
+            className="text-[0.6111rem] font-bold text-[#2053BA] hover:text-[#1a449b] flex items-center gap-1 transition-colors"
           >
             <RefreshCw className={`w-3 h-3 ${loadingData ? "animate-spin" : ""}`} /> Refresh
           </button>
@@ -249,8 +249,8 @@ export default function ProfilePage() {
 
         {referrals.length === 0 ? (
           <div className="py-4 text-center text-gray-400 space-y-0.5 bg-gray-50/40 rounded-xl border border-dashed border-gray-200">
-            <p className="text-[11px] font-bold text-gray-600">No referral activity recorded yet.</p>
-            <p className="text-[10px]">Share your link above to start earning store credit!</p>
+            <p className="text-[0.6111rem] font-bold text-gray-600">No referral activity recorded yet.</p>
+            <p className="text-[0.5556rem]">Share your link above to start earning store credit!</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -258,26 +258,26 @@ export default function ProfilePage() {
               <div key={refItem.id} className="py-2 flex items-center justify-between gap-2">
                 <div className="space-y-0.5 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] font-bold text-gray-900 truncate">
+                    <span className="text-[0.6111rem] font-bold text-gray-900 truncate">
                       Friend ({refItem.referred_user_id.substring(0, 8)})
                     </span>
                     {refItem.status === "rewarded" && (
-                      <span className="text-[9px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-200 inline-flex items-center gap-0.5">
+                      <span className="text-[0.5rem] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-200 inline-flex items-center gap-0.5">
                         <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" /> Rewarded
                       </span>
                     )}
                     {refItem.status === "pending" && (
-                      <span className="text-[9px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded-full border border-amber-200 inline-flex items-center gap-0.5">
+                      <span className="text-[0.5rem] font-black text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded-full border border-amber-200 inline-flex items-center gap-0.5">
                         <Clock className="w-2.5 h-2.5 text-amber-600" /> Pending (7d)
                       </span>
                     )}
                     {refItem.status === "signed_up" && (
-                      <span className="text-[9px] font-black text-[#2053BA] bg-blue-50 px-1.5 py-0.2 rounded-full border border-blue-200">
+                      <span className="text-[0.5rem] font-black text-[#2053BA] bg-blue-50 px-1.5 py-0.2 rounded-full border border-blue-200">
                         Signed Up
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-[0.5556rem] text-gray-400">
                     {new Date(refItem.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     {refItem.reward_available_at && refItem.status === "pending" && (
                       <span> · Unlocks {new Date(refItem.reward_available_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
@@ -287,9 +287,9 @@ export default function ProfilePage() {
 
                 <div className="text-right shrink-0">
                   {refItem.reward_amount ? (
-                    <span className="text-[11px] font-black text-emerald-600">+₹{refItem.reward_amount}</span>
+                    <span className="text-[0.6111rem] font-black text-emerald-600">+₹{refItem.reward_amount}</span>
                   ) : (
-                    <span className="text-[10px] font-medium text-gray-400">Awaiting Order</span>
+                    <span className="text-[0.5556rem] font-medium text-gray-400">Awaiting Order</span>
                   )}
                 </div>
               </div>
@@ -307,8 +307,8 @@ export default function ProfilePage() {
 
         {transactions.length === 0 ? (
           <div className="py-4 text-center text-gray-400 space-y-0.5 bg-gray-50/40 rounded-xl border border-dashed border-gray-200">
-            <p className="text-[11px] font-bold text-gray-600">No credit transactions yet.</p>
-            <p className="text-[10px]">Credits earned from referrals or spent on e-books appear here.</p>
+            <p className="text-[0.6111rem] font-bold text-gray-600">No credit transactions yet.</p>
+            <p className="text-[0.5556rem]">Credits earned from referrals or spent on e-books appear here.</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
@@ -321,14 +321,14 @@ export default function ProfilePage() {
                     {tx.amount > 0 ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold text-gray-900 truncate leading-tight">{tx.description}</p>
-                    <span className="text-[10px] text-gray-400 leading-tight block">
+                    <p className="text-[0.6111rem] font-bold text-gray-900 truncate leading-tight">{tx.description}</p>
+                    <span className="text-[0.5556rem] text-gray-400 leading-tight block">
                       {new Date(tx.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </span>
                   </div>
                 </div>
 
-                <span className={`text-[11px] font-black shrink-0 ${
+                <span className={`text-[0.6111rem] font-black shrink-0 ${
                   tx.amount > 0 ? "text-emerald-600" : "text-gray-900"
                 }`}>
                   {tx.amount > 0 ? `+₹${tx.amount}` : `-₹${Math.abs(tx.amount)}`}
@@ -343,7 +343,7 @@ export default function ProfilePage() {
       <div className="pt-3 border-t border-gray-100">
         <button
           onClick={() => setShowRules(!showRules)}
-          className="w-full flex items-center justify-between text-[11px] font-extrabold text-gray-600 uppercase tracking-wider py-1.5 hover:text-gray-900 transition-colors"
+          className="w-full flex items-center justify-between text-[0.6111rem] font-extrabold text-gray-600 uppercase tracking-wider py-1.5 hover:text-gray-900 transition-colors"
         >
           <span className="flex items-center gap-1.5">
             <Info className="w-3.5 h-3.5 text-[#2053BA]" /> Program Rules & Details
@@ -352,7 +352,7 @@ export default function ProfilePage() {
         </button>
 
         {showRules && (
-          <div className="mt-2 text-[11px] text-gray-600 space-y-1.5 leading-relaxed bg-gray-50/80 p-3 rounded-xl border border-gray-200">
+          <div className="mt-2 text-[0.6111rem] text-gray-600 space-y-1.5 leading-relaxed bg-gray-50/80 p-3 rounded-xl border border-gray-200">
             <p><strong className="text-gray-900">1. Referral Discount:</strong> Referred friends receive 15% off their first competitive exam e-book purchase on Exam Kart when using your unique link.</p>
             <p><strong className="text-gray-900">2. Store Credit:</strong> You earn 20% of their net order value as wallet credit, capped at ₹300 per referral.</p>
             <p><strong className="text-gray-900">3. 7-Day Hold:</strong> Referral rewards enter a 7-day validation period before becoming unlocked and available in your wallet.</p>

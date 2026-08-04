@@ -116,16 +116,16 @@ export default async function Home() {
         {/* Banner - Vertical height decreased by 20% */}
         <section className="bg-gradient-to-br from-[#1e3a8a] via-[#2053BA] to-[#3b82f6] rounded-2xl py-3.5 px-4 text-white shadow-md shadow-[#2053BA]/15 relative overflow-hidden">
           <div className="relative z-10 w-11/12">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-md text-[9px] font-extrabold uppercase tracking-wider mb-1">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-md text-[0.5rem] font-extrabold uppercase tracking-wider mb-1">
               <Sparkles className="w-2.5 h-2.5 text-amber-300 fill-amber-300" /> Deal of the Day
             </span>
             <h2 className="text-base font-bold mb-0.5 leading-tight">PDF books for All Exams</h2>
-            <p className="text-[11px] text-white/95 mb-2.5 leading-snug">
+            <p className="text-[0.6111rem] text-white/95 mb-2.5 leading-snug">
               PDF Books for School CBSE/NCERT, Entrance exams, Govt Job Exams are available for INSTANT Download.
             </p>
             <Link
               href="/book/upsc-prelims-csat"
-              className="inline-block bg-white text-[#2053BA] px-3.5 py-1.5 rounded-full text-[11px] font-extrabold active:scale-95 transition-transform shadow-sm"
+              className="inline-block bg-white text-[#2053BA] px-3.5 py-1.5 rounded-full text-[0.6111rem] font-extrabold active:scale-95 transition-transform shadow-sm"
             >
               Get Now at ₹199
             </Link>
@@ -157,7 +157,7 @@ export default async function Home() {
                       style={{ width: `${((idx * 23) % 40) + 40}%` }}
                     ></div>
                   </div>
-                  <p className="text-[9px] font-semibold text-gray-500">Page 42 of {book.pageCount || 150}</p>
+                  <p className="text-[0.5rem] font-semibold text-gray-500">Page 42 of {book.pageCount || 150}</p>
                 </div>
               </Link>
             ))}
@@ -223,7 +223,7 @@ export default async function Home() {
               <div className="w-9 h-9 rounded-full bg-[#53BA20]/10 flex items-center justify-center text-[#53BA20]">
                 <Download className="w-4 h-4" />
               </div>
-              <p className="text-[10px] font-bold leading-tight text-gray-800">
+              <p className="text-[0.5556rem] font-bold leading-tight text-gray-800">
                 Instant PDF<br />Downloads
               </p>
             </div>
@@ -231,7 +231,7 @@ export default async function Home() {
               <div className="w-9 h-9 rounded-full bg-[#2053BA]/10 flex items-center justify-center text-[#2053BA]">
                 <BookOpen className="w-4 h-4" />
               </div>
-              <p className="text-[10px] font-bold leading-tight text-gray-800">
+              <p className="text-[0.5556rem] font-bold leading-tight text-gray-800">
                 Native PDF<br />Reader
               </p>
             </div>
@@ -239,7 +239,7 @@ export default async function Home() {
               <div className="w-9 h-9 rounded-full bg-[#BA8720]/10 flex items-center justify-center text-[#BA8720]">
                 <Shield className="w-4 h-4" />
               </div>
-              <p className="text-[10px] font-bold leading-tight text-gray-800">
+              <p className="text-[0.5556rem] font-bold leading-tight text-gray-800">
                 Verified<br />Solved Papers
               </p>
             </div>
@@ -266,7 +266,7 @@ export default async function Home() {
             <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-1">
               Quick Links & Policies
             </h2>
-            <p className="text-[11px] text-gray-500">Legal info, support, and contact for Exam Kart</p>
+            <p className="text-[0.6111rem] text-gray-500">Legal info, support, and contact for Exam Kart</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -277,7 +277,7 @@ export default async function Home() {
               <ShieldCheck className="w-4 h-4 text-[#2053BA] mb-2" />
               <div>
                 <h3 className="text-xs font-bold text-gray-900">Privacy Policy</h3>
-                <p className="text-[10px] text-gray-500">Data protection guidelines</p>
+                <p className="text-[0.5556rem] text-gray-500">Data protection guidelines</p>
               </div>
             </Link>
 
@@ -288,7 +288,7 @@ export default async function Home() {
               <FileText className="w-4 h-4 text-[#2053BA] mb-2" />
               <div>
                 <h3 className="text-xs font-bold text-gray-900">Terms & Conditions</h3>
-                <p className="text-[10px] text-gray-500">User license agreement</p>
+                <p className="text-[0.5556rem] text-gray-500">User license agreement</p>
               </div>
             </Link>
 
@@ -299,7 +299,7 @@ export default async function Home() {
               <RefreshCw className="w-4 h-4 text-[#53BA20] mb-2" />
               <div>
                 <h3 className="text-xs font-bold text-gray-900">Refund Policy</h3>
-                <p className="text-[10px] text-gray-500">Returns & cancellations</p>
+                <p className="text-[0.5556rem] text-gray-500">Returns & cancellations</p>
               </div>
             </Link>
 
@@ -310,12 +310,12 @@ export default async function Home() {
               <Mail className="w-4 h-4 text-[#8720BA] mb-2" />
               <div>
                 <h3 className="text-xs font-bold text-gray-900">Contact Us</h3>
-                <p className="text-[10px] text-gray-500">Support & inquiries</p>
+                <p className="text-[0.5556rem] text-gray-500">Support & inquiries</p>
               </div>
             </Link>
           </div>
 
-          <div className="p-3 bg-gray-50/60 rounded-2xl border border-gray-100 text-[11px] space-y-1.5 text-gray-700">
+          <div className="p-3 bg-gray-50/60 rounded-2xl border border-gray-100 text-[0.6111rem] space-y-1.5 text-gray-700">
             <div>
               <span><strong>Legal Name:</strong> Pardeep Kumar</span>
               <span className="mx-1.5">|</span>
@@ -345,7 +345,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <p className="text-center text-[10px] text-gray-400 font-medium pt-1">
+          <p className="text-center text-[0.5556rem] text-gray-400 font-medium pt-1">
             © 2026 Exam Kart. All rights reserved.
           </p>
         </footer>

@@ -72,7 +72,7 @@ export default async function CategoriesPage() {
       />
 
       {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="mb-2.5 text-[11px] text-gray-500 font-medium">
+      <nav aria-label="Breadcrumb" className="mb-2.5 text-[0.6111rem] text-gray-500 font-medium">
         <ol className="flex items-center gap-1.5">
           <li>
             <Link href="/" className="hover:text-gray-900 transition-colors">
@@ -125,7 +125,7 @@ export default async function CategoriesPage() {
                   <h2 className="text-xs font-extrabold text-gray-900 group-hover:text-[#2053BA] transition-colors leading-snug line-clamp-2">
                     {cat.name}
                   </h2>
-                  <p className="text-[10px] text-gray-500 mt-0.5 font-semibold">
+                  <p className="text-[0.5556rem] text-gray-500 mt-0.5 font-semibold">
                     {bookCount} {bookCount === 1 ? "E-Book" : "E-Books"}
                   </p>
                 </div>

@@ -94,7 +94,7 @@ export default function AdminSEODashboard() {
           <h1 className="text-xl font-black text-gray-900 tracking-tight">
             SEO & Automated Publishing Workflow
           </h1>
-          <p className="text-[11px] text-gray-500 font-medium">
+          <p className="text-[0.6111rem] text-gray-500 font-medium">
             Validate metadata, auto-generate clean URLs, regenerate pages & purge Cloudflare CDN cache
           </p>
         </div>
@@ -106,7 +106,7 @@ export default function AdminSEODashboard() {
           <div className="flex items-center gap-2 text-xs font-bold">
             <Sparkles className="w-4 h-4 text-amber-300" /> Automated SEO & Cache Purge Pipeline
           </div>
-          <p className="text-[11px] text-white/80 leading-relaxed">
+          <p className="text-[0.6111rem] text-white/80 leading-relaxed">
             Every submission validates title length, description constraints, and clean URL slugs before saving to Firestore (&apos;pdfbooks&apos;). Upon publication, Next.js paths are revalidated instantly and Cloudflare CDN caches are purged.
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function AdminSEODashboard() {
 
           <form onSubmit={handlePublishSubmit} className="space-y-3">
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">
+              <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">
                 Book Title * (20-100 chars)
               </label>
               <input
@@ -129,14 +129,14 @@ export default function AdminSEODashboard() {
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#2053BA]"
               />
-              <span className="text-[10px] text-gray-400 font-mono">
+              <span className="text-[0.5556rem] text-gray-400 font-mono">
                 Chars: {formData.title.length} / 100
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">
                   Clean SEO Slug
                 </label>
                 <input
@@ -149,7 +149,7 @@ export default function AdminSEODashboard() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">
                   Category *
                 </label>
                 <input
@@ -163,7 +163,7 @@ export default function AdminSEODashboard() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">
+              <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">
                 SEO Meta Description * (40-300 chars)
               </label>
               <textarea
@@ -173,14 +173,14 @@ export default function AdminSEODashboard() {
                 onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-[#2053BA] resize-none"
               />
-              <span className="text-[10px] text-gray-400 font-mono">
+              <span className="text-[0.5556rem] text-gray-400 font-mono">
                 Chars: {formData.seoDescription.length} / 300
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">
                   Buy Price (₹) *
                 </label>
                 <input
@@ -193,7 +193,7 @@ export default function AdminSEODashboard() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">
                   List Price (₹)
                 </label>
                 <input
@@ -206,7 +206,7 @@ export default function AdminSEODashboard() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">
+              <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">
                 Tags (Comma separated)
               </label>
               <input
@@ -248,7 +248,7 @@ export default function AdminSEODashboard() {
               </div>
 
               {publishResult.success ? (
-                <div className="space-y-1.5 pt-1 text-[11px]">
+                <div className="space-y-1.5 pt-1 text-[0.6111rem]">
                   <p>
                     <strong>Clean URL:</strong>{" "}
                     <a
@@ -269,7 +269,7 @@ export default function AdminSEODashboard() {
                   </p>
                 </div>
               ) : (
-                <ul className="list-disc pl-4 space-y-1 text-[11px]">
+                <ul className="list-disc pl-4 space-y-1 text-[0.6111rem]">
                   {publishResult.errors?.map((err: string, i: number) => (
                     <li key={i}>{err}</li>
                   ))}
@@ -287,7 +287,7 @@ export default function AdminSEODashboard() {
 
           <form onSubmit={handlePurgeSubmit} className="space-y-3">
             <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">
+              <label className="block text-[0.6111rem] font-bold text-gray-700 mb-1">
                 Target Page URL to Purge
               </label>
               <input
@@ -309,7 +309,7 @@ export default function AdminSEODashboard() {
           </form>
 
           {purgeResult && (
-            <div className="p-3 bg-gray-50 rounded-2xl border border-gray-200 text-[11px] font-mono space-y-1">
+            <div className="p-3 bg-gray-50 rounded-2xl border border-gray-200 text-[0.6111rem] font-mono space-y-1">
               <p>
                 <strong>Status:</strong> {purgeResult.success ? "200 OK" : "Failed"}
               </p>

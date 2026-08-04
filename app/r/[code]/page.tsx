@@ -34,7 +34,7 @@ export default function ReferralLandingPage({ params }: ReferralPageProps) {
         </div>
 
         <div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-green-50 text-green-700 border border-green-200 mb-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6111rem] font-extrabold bg-green-50 text-green-700 border border-green-200 mb-3">
             <Sparkles className="w-3.5 h-3.5" /> 15% Special Discount Unlocked!
           </span>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-snug">
@@ -47,7 +47,7 @@ export default function ReferralLandingPage({ params }: ReferralPageProps) {
 
         <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200/80 flex items-center justify-between text-left">
           <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Applied Referral Code</span>
+            <span className="text-[0.5556rem] font-bold text-gray-400 uppercase tracking-wider block">Applied Referral Code</span>
             <span className="text-sm font-extrabold text-gray-900 tracking-wider">{code}</span>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-bold text-green-600 bg-green-100/80 px-2.5 py-1 rounded-lg">
@@ -70,7 +70,7 @@ export default function ReferralLandingPage({ params }: ReferralPageProps) {
           </Link>
         </div>
 
-        <p className="text-[10px] text-gray-400 italic">
+        <p className="text-[0.5556rem] text-gray-400 italic">
           *Discount will auto-apply at checkout. Valid for 30 days on your first purchase.
         </p>
       </div>

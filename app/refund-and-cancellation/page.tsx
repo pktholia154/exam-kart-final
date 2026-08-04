@@ -43,7 +43,7 @@ export default function RefundAndCancellationPage() {
       />
 
       {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="mb-3 text-[11px] text-gray-500 font-medium">
+      <nav aria-label="Breadcrumb" className="mb-3 text-[0.6111rem] text-gray-500 font-medium">
         <ol className="flex items-center gap-1.5">
           <li>
             <Link href="/" className="hover:text-gray-900 transition-colors">
@@ -68,7 +68,7 @@ export default function RefundAndCancellationPage() {
         </Link>
         <div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Refund Policy</h1>
-          <p className="text-[11px] text-gray-500 font-medium">Refund & Cancellation Policy</p>
+          <p className="text-[0.6111rem] text-gray-500 font-medium">Refund & Cancellation Policy</p>
         </div>
       </div>
 
@@ -143,7 +143,7 @@ export default function RefundAndCancellationPage() {
         <section className="space-y-3 pt-2">
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2">6. Contact for Refund Inquiries</h2>
 
-          <div className="bg-[#F5F5F7] p-3 rounded-2xl space-y-2 text-[11px] font-medium text-gray-800">
+          <div className="bg-[#F5F5F7] p-3 rounded-2xl space-y-2 text-[0.6111rem] font-medium text-gray-800">
             <div>
               <span><strong>Legal Name:</strong> Pardeep Kumar</span>
             </div>

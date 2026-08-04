@@ -300,7 +300,7 @@ export default function CartPage() {
                   <Gift className="w-4 h-4 text-purple-600" />
                 </div>
                 <div>
-                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-purple-600 block">
+                  <span className="text-[0.5rem] font-extrabold uppercase tracking-wider text-purple-600 block">
                     Referral Discount Applied!
                   </span>
                   <p className="text-xs font-black">
@@ -321,8 +321,8 @@ export default function CartPage() {
                 <ProceduralCover title={item.book.title} className="w-16 rounded shadow-sm shrink-0" />
                 <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch">
                   <div>
-                    <h3 className="text-[13px] font-bold text-gray-900 leading-tight mb-1">{item.book.title}</h3>
-                    <p className="text-[11px] text-gray-500 line-clamp-1">{item.book.publisher}</p>
+                    <h3 className="text-[0.7222rem] font-bold text-gray-900 leading-tight mb-1">{item.book.title}</h3>
+                    <p className="text-[0.6111rem] text-gray-500 line-clamp-1">{item.book.publisher}</p>
                   </div>
                   <div className="flex items-center justify-between mt-2">
                     <span className="font-bold text-[#2053BA] text-sm">₹{item.book.buyprice}</span>
@@ -347,12 +347,12 @@ export default function CartPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h4 className="text-[11px] font-extrabold text-amber-900">Use Store Credit</h4>
-                    <span className="text-[9px] font-bold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded">
+                    <h4 className="text-[0.6111rem] font-extrabold text-amber-900">Use Store Credit</h4>
+                    <span className="text-[0.5rem] font-bold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded">
                       ₹{walletBalance.toFixed(2)} available
                     </span>
                   </div>
-                  <p className="text-[10px] text-amber-700">Apply credit earned from referring friends</p>
+                  <p className="text-[0.5556rem] text-amber-700">Apply credit earned from referring friends</p>
                 </div>
               </div>
 
@@ -370,7 +370,7 @@ export default function CartPage() {
 
           {/* Bill Summary */}
           <div className="pt-2">
-            <h3 className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider mb-3">Order Summary</h3>
+            <h3 className="text-[0.6111rem] font-extrabold text-gray-400 uppercase tracking-wider mb-3">Order Summary</h3>
 
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-600">Subtotal ({totalItems} items)</span>
@@ -399,7 +399,7 @@ export default function CartPage() {
               <div>
                 <span className="text-sm font-black text-gray-900 block">Total Payable</span>
                 {appliedReferralCode && (
-                  <span className="text-[10px] text-gray-400">Referral reward will unlock for referrer in 7 days</span>
+                  <span className="text-[0.5556rem] text-gray-400">Referral reward will unlock for referrer in 7 days</span>
                 )}
               </div>
               <span className="text-lg font-black text-[#2053BA]">₹{finalPayableTotal.toFixed(2)}</span>

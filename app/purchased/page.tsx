@@ -140,10 +140,10 @@ export default function PurchasedPage() {
       <div className="flex items-center justify-between pb-3 mb-2 border-b border-gray-100">
         <div>
           <h1 className="text-lg font-black text-gray-900 tracking-tight">My Purchased Books</h1>
-          <p className="text-[11px] text-gray-500 font-medium">Your personal digital library and downloads</p>
+          <p className="text-[0.6111rem] text-gray-500 font-medium">Your personal digital library and downloads</p>
         </div>
         {purchases.length > 0 && (
-          <span className="text-[10px] font-extrabold text-[#2053BA] bg-[#2053BA]/10 px-2.5 py-1 rounded-full">
+          <span className="text-[0.5556rem] font-extrabold text-[#2053BA] bg-[#2053BA]/10 px-2.5 py-1 rounded-full">
             {purchases.length} {purchases.length === 1 ? "Book" : "Books"}
           </span>
         )}
@@ -159,7 +159,7 @@ export default function PurchasedPage() {
             <BookOpen className="w-7 h-7 text-gray-400" />
           </div>
           <h3 className="text-xs font-bold text-gray-900">Your library is empty</h3>
-          <p className="text-[11px] text-gray-500 mt-1 mb-5">E-books you purchase will appear here seamlessly for instant reading.</p>
+          <p className="text-[0.6111rem] text-gray-500 mt-1 mb-5">E-books you purchase will appear here seamlessly for instant reading.</p>
           <Link href="/" className="px-5 py-2 bg-[#2053BA] text-white text-xs font-bold rounded-full active:scale-95 transition-transform shadow-sm">
             Explore E-Books
           </Link>
@@ -173,10 +173,10 @@ export default function PurchasedPage() {
               <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch py-0.5">
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-0.5">
-                    <span className="text-[9px] font-extrabold text-[#8720BA] uppercase tracking-wider truncate">
+                    <span className="text-[0.5rem] font-extrabold text-[#8720BA] uppercase tracking-wider truncate">
                       {purchase.category || "E-Book"}
                     </span>
-                    <span className="text-[9px] text-gray-400 font-medium flex items-center gap-1 shrink-0">
+                    <span className="text-[0.5rem] text-gray-400 font-medium flex items-center gap-1 shrink-0">
                       <Clock className="w-2.5 h-2.5" /> {new Date(purchase.purchasedAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -191,21 +191,21 @@ export default function PurchasedPage() {
                     <div className="flex-1 bg-gray-100 rounded-full h-1 overflow-hidden">
                       <div className="bg-[#53BA20] h-1 rounded-full" style={{ width: '25%' }}></div>
                     </div>
-                    <span className="text-[9px] font-bold text-gray-500 shrink-0">25% Read</span>
+                    <span className="text-[0.5rem] font-bold text-gray-500 shrink-0">25% Read</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     {offlineStatus[purchase.bookId || purchase.seoslug] ? (
                       <Link 
                         href={`/read/${purchase.bookId || purchase.seoslug}?type=offline`} 
-                        className="flex-1 bg-[#53BA20] hover:bg-[#439619] text-white py-1.5 px-3 rounded-lg text-[11px] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 shadow-2xs"
+                        className="flex-1 bg-[#53BA20] hover:bg-[#439619] text-white py-1.5 px-3 rounded-lg text-[0.6111rem] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 shadow-2xs"
                       >
                         <BookOpen className="w-3 h-3" /> Read Offline
                       </Link>
                     ) : (
                       <Link 
                         href={`/read/${purchase.bookId || purchase.seoslug}?type=full${purchase.pdfurl ? `&url=${encodeURIComponent(purchase.pdfurl)}` : ""}`} 
-                        className="flex-1 bg-[#2053BA] hover:bg-[#301a9c] text-white py-1.5 px-3 rounded-lg text-[11px] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 shadow-2xs"
+                        className="flex-1 bg-[#2053BA] hover:bg-[#301a9c] text-white py-1.5 px-3 rounded-lg text-[0.6111rem] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 shadow-2xs"
                       >
                         <BookOpen className="w-3 h-3" /> Read Online
                       </Link>
@@ -213,7 +213,7 @@ export default function PurchasedPage() {
                     <button 
                       onClick={() => handleDownloadOffline(purchase)}
                       disabled={downloading[purchase.bookId || purchase.seoslug]}
-                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-1.5 px-3 rounded-lg text-[11px] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 border border-gray-200/80 disabled:opacity-50"
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-1.5 px-3 rounded-lg text-[0.6111rem] font-bold active:scale-95 transition-transform flex items-center justify-center gap-1 border border-gray-200/80 disabled:opacity-50"
                     >
                       {downloading[purchase.bookId || purchase.seoslug] ? (
                         <>

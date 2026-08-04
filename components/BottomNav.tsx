@@ -42,14 +42,14 @@ export function BottomNav() {
               >
                 <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
                 {item.name === "Cart" && totalItems > 0 && (
-                  <span className="absolute top-1 right-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white">
+                  <span className="absolute top-1 right-2 bg-red-500 text-white text-[0.5rem] font-bold px-1.5 py-0.5 rounded-full border border-white">
                     {totalItems}
                   </span>
                 )}
               </div>
               <span
                 className={cn(
-                  "text-[10px] font-medium transition-colors",
+                  "text-[0.5556rem] font-medium transition-colors",
                   isActive ? "text-[#2053BA]" : "text-gray-400"
                 )}
               >

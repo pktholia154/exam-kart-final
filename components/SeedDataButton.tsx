@@ -93,7 +93,7 @@ export function SeedDataButton() {
       >
         {clearing ? "Clearing..." : "Clear All Books & Categories"}
       </button>
-      <p className="text-center text-[10px] text-gray-500 mt-2">
+      <p className="text-center text-[0.5556rem] text-gray-500 mt-2">
         Manage &apos;categories&apos; and &apos;books&apos; collections in Firestore
       </p>
     </div>

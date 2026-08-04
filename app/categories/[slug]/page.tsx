@@ -125,7 +125,7 @@ export default async function CategoryDetailPage({ params }: CategoryPageProps) 
       />
 
       {/* Breadcrumb Navigation */}
-      <nav aria-label="Breadcrumb" className="mb-2.5 text-[11px] text-gray-500 font-medium">
+      <nav aria-label="Breadcrumb" className="mb-2.5 text-[0.6111rem] text-gray-500 font-medium">
         <ol className="flex items-center gap-1.5">
           <li>
             <Link href="/" className="hover:text-gray-900 transition-colors">
@@ -156,7 +156,7 @@ export default async function CategoryDetailPage({ params }: CategoryPageProps) 
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div>
-            <p className="text-[10px] font-bold text-[#8720BA] uppercase tracking-wider">
+            <p className="text-[0.5556rem] font-bold text-[#8720BA] uppercase tracking-wider">
               Exam Category
             </p>
             <h1 className="text-xl font-black text-gray-900 tracking-tight leading-tight">
@@ -211,7 +211,7 @@ export default async function CategoryDetailPage({ params }: CategoryPageProps) 
               </div>
               <div>
                 <h3 className="text-xs font-bold text-gray-900">No books found in {category.name}</h3>
-                <p className="text-[10px] text-gray-500 mt-1 max-w-[220px] mx-auto font-medium leading-relaxed">
+                <p className="text-[0.5556rem] text-gray-500 mt-1 max-w-[220px] mx-auto font-medium leading-relaxed">
                   We are currently uploading latest exam books for {category.name}. Check back soon!
                 </p>
               </div>

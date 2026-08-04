@@ -690,8 +690,8 @@ export default function PDFReader() {
             {isLoading && (
               <div id="loading-spinner" className="flex flex-col items-center justify-center h-full gap-4 text-slate-600">
                 <Loader2 className="w-8 h-8 animate-spin text-[#2053BA]" />
-                <p className="text-[13px] font-semibold text-slate-800">Initializing PDFium WASM Engine...</p>
-                <p className="text-[11px] max-w-[260px] text-center text-slate-500">
+                <p className="text-[0.7222rem] font-semibold text-slate-800">Initializing PDFium WASM Engine...</p>
+                <p className="text-[0.6111rem] max-w-[260px] text-center text-slate-500">
                   Loading high-precision WebAssembly vector engine.
                 </p>
               </div>

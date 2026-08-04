@@ -44,7 +44,7 @@ export default function ContactUsPage() {
       />
 
       {/* Breadcrumb Navigation */}
-      <nav aria-label="Breadcrumb" className="mb-3 text-[11px] text-gray-500 font-medium">
+      <nav aria-label="Breadcrumb" className="mb-3 text-[0.6111rem] text-gray-500 font-medium">
         <ol className="flex items-center gap-1.5">
           <li>
             <Link href="/" className="hover:text-gray-900 transition-colors">
@@ -69,7 +69,7 @@ export default function ContactUsPage() {
         </Link>
         <div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Contact Us</h1>
-          <p className="text-[11px] text-gray-500 font-medium">We are here to help you</p>
+          <p className="text-[0.6111rem] text-gray-500 font-medium">We are here to help you</p>
         </div>
       </div>
 
